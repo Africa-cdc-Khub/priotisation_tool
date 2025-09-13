@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   apache_php:
-    image: php:8.2.4-apache
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: apache_php
     restart: always
     volumes:
@@ -24,6 +26,7 @@ services:
 
   mysql_client:
     image: mysql:5.7.42
+    platform: linux/amd64
     container_name: mysql_client
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}

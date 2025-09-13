@@ -18,6 +18,7 @@ public function home()
 		$data['module'] = $this->dashmodule;
 		$data['title'] = 'Dashboard';
 		$data['uptitle'] = "Country";
+		$data['uptitle'] = "Region";
 		$data['countries'] = $this->lists_mdl->get_memberstates();
 		$data['thematic_areas'] = $this->lists_mdl->get_thematic_areas();
 		//dd($data);
@@ -29,6 +30,7 @@ public function home()
 	{
 		$data['module'] = 'records';
 		$data['title'] = 'Country Disease Profile';
+		$data['uptitle'] = "Region";
 		$data['uptitle'] = "Country";
 		$data['countries'] = $this->lists_mdl->get_memberstates();
 		$data['prioritisation_categories'] = $this->dash_mdl->get_prioritisation_categories();

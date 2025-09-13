@@ -30,12 +30,28 @@ public function get_diseases(){
    $data=  $this->db->get('diseases_and_conditions');
    return $data->result_array();
 }
-   public function get_memberstates(){
-            $this->db->order_by('member_state','ASC');
-    return  $this->db->get('member_states')->result_array();
-   }
-   public function get_prioritisation_categories(){
- return  $this->db->get('priotisation_category')->result_array();
+public function get_memberstates(){
+        $this->db->order_by('member_state','ASC');
+return  $this->db->get('member_states')->result_array();
+}
+public function get_regions(){
+        $this->db->order_by('name','ASC');
+return  $this->db->get('regions')->result_array();
+}
+
+
+public function get_memberstates_by_region($region_id){
+        $this->db->where('region_id', $region_id);
+        $this->db->order_by('member_state','ASC');
+return  $this->db->get('member_states')->result_array();
+}
+public function get_region_by_memberstates($memberstate_id){
+        $this->db->where('id', $memberstate_id);
+        $this->db->order_by('member_state','ASC');
+return  $this->db->get('member_states')->row()->region_id;
+}
+public function get_prioritisation_categories(){
+return  $this->db->get('priotisation_category')->result_array();
 
 }
 }

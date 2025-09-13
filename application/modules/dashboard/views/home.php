@@ -11,6 +11,19 @@
       </select>
     </div>
 
+     <!-- Region -->
+    <div class="col-md-2 p-2">
+      <label>Region</label>
+      <select id="member_state" class="form-control" <?php if(!$this->session->userdata('is_admin')): ?> disabled <?php endif; ?>>
+        <?php foreach ($countries as $country): ?>
+          <option value="<?= $country['id'] ?>" 
+            <?php if($this->session->userdata('memberstate_id') == $country['id']){ echo "selected readonly"; } ?>>
+            <?= $country['member_state'] ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
     <!-- Country -->
     <div class="col-md-2 p-2">
       <label>Country</label>

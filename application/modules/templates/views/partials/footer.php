@@ -219,7 +219,7 @@ $(document).ready(function () {
   renderContinentalChart();
   renderDiseaseProbabilityGauge();
 
-  $('#member_state, #period, #thematic_area, #prioritisation_category').change(() => {
+  $('#region, #member_state, #period, #thematic_area, #prioritisation_category').change(() => {
     handleFilterChange();
     renderDiseaseProbabilityGauge($('#disease_selector').val());
   });
@@ -245,6 +245,7 @@ function handleFilterChange() {
 
 function getFilters() {
   return {
+    region_id: $('#region').val(),
     member_state_id: $('#member_state').val(),
     period: $('#period').val(),
     thematic_area_id: $('#thematic_area').val(),
@@ -254,6 +255,7 @@ function getFilters() {
 }
 
 function loadRankingForm(filters) {
+  console.log('Loading ranking form with filters:', filters);
   const tableBody = $('#ranking-body');
 
   // Temporary placeholder during fetch
@@ -297,7 +299,7 @@ function renderChartByThematicArea(filters) {
 
       Highcharts.chart('priority-disease-chart', {
         chart: { type: 'bar', backgroundColor: '#ffffff' },
-        title: { text: 'Prioritized Diseases by Thematic Area' },
+        title: { text: 'Shortlisted Diseases by Thematic Area' },
         xAxis: { categories, title: null },
         yAxis: {
           min: 0,
@@ -367,7 +369,7 @@ function renderContinentalChart() {
 
       Highcharts.chart('continental-disease-chart', {
         chart: { type: 'bar', backgroundColor: '#fff' },
-        title: { text: 'Continental Prioritized Diseases & Conditions by Thematic Area' },
+        title: { text: 'Continental Shortlisted Diseases & Conditions by Thematic Area' },
         xAxis: { categories, title: null },
         yAxis: {
           min: 0,

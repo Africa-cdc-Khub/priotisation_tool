@@ -445,7 +445,7 @@ function renderChartByThematicArea(filters) {
 
       Highcharts.chart('priority-disease-chart', {
         chart: { type: 'bar', backgroundColor: '#ffffff' },
-        title: { text: 'Prioritized Diseases by Thematic Area' },
+        title: { text: 'Shortlisted Diseases by Thematic Area' },
         xAxis: { categories, title: null },
         yAxis: {
           min: 0,
@@ -515,7 +515,7 @@ function renderContinentalChart() {
 
       Highcharts.chart('continental-disease-chart', {
         chart: { type: 'bar', backgroundColor: '#fff' },
-        title: { text: 'Continental Prioritized Diseases & Conditions by Thematic Area' },
+        title: { text: 'Continental Shortlisted Diseases & Conditions by Thematic Area' },
         xAxis: { categories, title: null },
         yAxis: {
           min: 0,

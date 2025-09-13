@@ -32,9 +32,10 @@ class Records_model extends CI_Model
 		return $this->db->get()->result_array();
 	}
 
-	public function get_existing_data($member_state_id, $period, $prioritisation_category_id)
+	public function get_existing_data($region_id,$member_state_id, $period, $prioritisation_category_id)
 	{
 		return $this->db->get_where('member_state_diseases_data', [
+			'region_id' => $region_id, 
 			'member_state_id' => $member_state_id,
 			'period' => $period,
 			'prioritisation_category' => $prioritisation_category_id
@@ -70,6 +71,7 @@ class Records_model extends CI_Model
     $data = [
         'period' => $period,
         'member_state_id' => $member_state_id,
+		'region_id' => $this->lists_mdl->get_region_by_memberstates($member_state_id),
         'disease_id' => $disease_id,
         'prioritisation_category' => $prioritisation_category_id,
         $param => $creteria,
@@ -97,30 +99,38 @@ class Records_model extends CI_Model
 			'prioritisation_category' => $prioritisation_category_id
 		])->row_array();
 	}
-	public function get_assigned_diseases_with_area($member_state_id, $thematic_area_id = null)
+	public function get_assigned_diseases_with_area($region_id,$member_state_id, $thematic_area_id = null)
 	{
 		$this->db->select('d.id, d.name, ta.name as thematic_area')
 				 ->from('member_state_diseases msd')
 				 ->join('diseases_and_conditions d', 'd.id = msd.disease_id')
 				 ->join('disease_thematic_areas ta', 'ta.id = d.thematic_area_id')
-				 ->where('msd.member_state_id', $member_state_id);
-
+				 ->join('member_states ms', 'ms.id = msd.member_state_id')
+				 ->where('msd.member_state_id', $member_state_id)
+				 ->where('ms.region_id', $region_id);
 		if (!empty($thematic_area_id)) {
 			$this->db->where('d.thematic_area_id', $thematic_area_id);
 		}
 
 		return $this->db->get()->result_array();
 	}
-	public function get_priority_disease_counts_by_thematic_area($member_state_id, $period = null, $thematic_area_id = null, $prioritisation_category_id = null)
+	public function get_priority_disease_counts_by_thematic_area($region_id,$member_state_id, $period = null, $thematic_area_id = null, $prioritisation_category_id = null)
 	{
 		$this->db->select('dta.name as thematic_area, COUNT(DISTINCT msd.disease_id) as total')
 				 ->from('member_state_diseases_data msd')
 				 ->join('diseases_and_conditions d', 'd.id = msd.disease_id')
 				 ->join('disease_thematic_areas dta', 'd.thematic_area_id = dta.id')
-				 ->where('msd.member_state_id', $member_state_id)
+				//  ->where('msd.member_state_id', $member_state_id)
+				//  ->where('msd.region_id', $region_id)
 				 ->where('msd.draft_status', 0); // Only finalized
 	
 		// Optional filters
+		if (!empty($member_state_id)) {
+			$this->db->where('msd.member_state_id', $member_state_id);
+		}
+		if (!empty($region_id)) {
+			$this->db->where('msd.region_id', $region_id);
+		}
 		if (!empty($period)) {
 			$this->db->where('msd.period', $period);
 		}
@@ -140,14 +150,17 @@ class Records_model extends CI_Model
 		// For debugging: 
 		// echo $this->db->last_query(); exit;
 	}
-	public function get_disease_probabilities($member_state_id, $period, $thematic_area_id, $prioritisation_category_id)
+	public function get_disease_probabilities($region_id,$member_state_id, $period, $thematic_area_id, $prioritisation_category_id)
 {
     $this->db->select('d.name as disease_name, msd.probability');
     $this->db->from('member_state_diseases_data msd');
     $this->db->join('diseases_and_conditions d', 'd.id = msd.disease_id');
     
-    if (!empty($member_state_id)) {
+	if (!empty($member_state_id)) {
         $this->db->where('msd.member_state_id', $member_state_id);
+    }
+    if (!empty($region_id)) {
+        $this->db->where('msd.region_id', $region_id);
     }
 
     if (!empty($period)) {
@@ -186,13 +199,17 @@ public function get_priority_disease_counts_by_thematic_area_cont($member_state_
     return $this->db->get()->result_array();
 }
 
-public function get_disease_probability_value($member_state_id, $period, $thematic_area_id, $prioritisation_category_id, $disease_id)
+public function get_disease_probability_value($region_id,$member_state_id, $period, $thematic_area_id, $prioritisation_category_id, $disease_id)
 {
     $this->db->select('probability');
     $this->db->from('member_state_diseases_data');
     $this->db->join('diseases_and_conditions d', 'd.id = member_state_diseases_data.disease_id');
 
-    if ($member_state_id) {
+    if ($region_id) {
+        $this->db->where('region_id', $region_id);
+    }
+
+	if ($member_state_id) {
         $this->db->where('member_state_id', $member_state_id);
     }
 
@@ -219,6 +236,4 @@ public function get_disease_probability_value($member_state_id, $period, $themat
     $row = $query->row();
     return $row ? (float)$row->probability : 0;
 }
-
-
 }

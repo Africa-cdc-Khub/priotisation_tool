@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
-    mysql-client \
+    default-mysql-client \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd mysqli \
     && docker-php-ext-enable pdo_mysql mbstring exif pcntl bcmath gd mysqli
 

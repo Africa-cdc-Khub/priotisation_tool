@@ -33,6 +33,13 @@ class Lists extends MX_Controller
 		return $this->lists_mdl->get_memberstates();
 
 	}
+	public function get_memberstates_by_region($region_id){
+		return $this->lists_mdl->get_memberstates_by_region($region_id);
+
+	}
+	public function get_regions(){
+		return $this->lists_mdl->get_regions();
+	}
 
 	public function get_prioritisation_categories(){
 		return $this->lists_mdl->get_prioritisation_categories();

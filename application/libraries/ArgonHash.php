@@ -75,7 +75,8 @@ class ArgonHash
      */
     protected function algorithm()
     {
-        return PASSWORD_ARGON2I;
+        // return PASSWORD_ARGON2I;
+        return defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT;
     }
 
     /**

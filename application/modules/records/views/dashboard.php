@@ -23,7 +23,20 @@
                 <?php endfor; ?>
             </select>
         </div>
-    
+        <!-- Region -->
+        <div class="col-md-2">
+            <label>Regions</label>
+            <select id="region" class="form-control" 
+                <?php if (!$this->session->userdata('is_admin')): ?> disabled <?php endif; ?>>
+                <option value="">All Regions</option>
+                <?php foreach ($regions as $region): ?>
+                    <option value="<?= $region['id'] ?>" 
+                        <?= $this->session->userdata('region_id') == $region['id'] ? 'selected' : '' ?>>
+                        <?= $region['name'] ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
         <!-- Country -->
         <div class="col-md-2">
             <label>Country</label>
@@ -117,3 +130,38 @@
         </div>
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#region').on('change', function() {
+        const regionId = $(this).val();
+
+        // Only proceed if a region is selected
+        if (regionId) {
+            $.ajax({
+                url: '<?= site_url("records/get_countries_by_region") ?>',
+                type: 'POST',
+                data: { region_id: regionId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const countries = response.countries;
+                        let options = '<option value="">-- Select Country --</option>';
+                        countries.forEach(function(country) {
+                            options += `<option value="${country.id}">${country.member_state}</option>`;
+                        });
+                        $('#member_state').html(options);
+                    } else {
+                        $('#member_state').html('<option value="">No countries found</option>');
+                    }
+                },
+                error: function() {
+                    $('#member_state').html('<option value="">Error loading countries</option>');
+                }
+            });
+        } else {
+            $('#member_state').html('<option value="">-- Select Country --</option>');
+        }
+    });
+});
+</script>

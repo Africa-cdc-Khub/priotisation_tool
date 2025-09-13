@@ -23,6 +23,7 @@ class Auth extends MX_Controller
       $email = $postdata['email'];
       $password = $postdata['password'];
       //dd($this->argonhash->make($password));
+      // dd($this->argonhash->make('admin123'));
   
       // Fetch user data from database
       $user = $this->auth_mdl->login(['email' => $email]);
