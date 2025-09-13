@@ -927,6 +927,33 @@ $(document).ready(function() {
         loadMapData();
         refreshDataTable();
     });
+    
+    // Period filter change handler
+    $('#period').on('change', function() {
+        loadMapData();
+        refreshDataTable();
+    });
+    
+    // Thematic area filter change handler
+    $('#thematic_area').on('change', function() {
+        loadMapData();
+        refreshDataTable();
+    });
+    
+    // Prioritisation category filter change handler
+    $('#prioritisation_category').on('change', function() {
+        loadMapData();
+        refreshDataTable();
+    });
+    
+    // General filter change handler for any filter
+    $('.form-control').on('change', function() {
+        // Only trigger if it's a filter (not a regular form control)
+        if ($(this).is('#region, #member_state, #period, #thematic_area, #prioritisation_category')) {
+            loadMapData();
+            refreshDataTable();
+        }
+    });
 
     // Initialize components with proper delays
     let initTimeout1 = setTimeout(function() {
