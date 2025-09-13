@@ -272,5 +272,69 @@ class Auth_mdl extends CI_Model
 		 }
 		 
 	   }
+
+	// Security and logging methods
+	public function get_failed_attempts($email)
+	{
+		$this->db->where('email', $email);
+		$this->db->where('attempt_time >', date('Y-m-d H:i:s', strtotime('-15 minutes')));
+		$query = $this->db->get('login_attempts');
+		return $query->num_rows();
+	}
+	
+	public function log_failed_attempt($email, $reason, $ip_address)
+	{
+		$data = array(
+			'email' => $email,
+			'reason' => $reason,
+			'ip_address' => $ip_address,
+			'attempt_time' => date('Y-m-d H:i:s')
+		);
+		$this->db->insert('login_attempts', $data);
+	}
+	
+	public function clear_failed_attempts($email)
+	{
+		$this->db->where('email', $email);
+		$this->db->delete('login_attempts');
+	}
+	
+	public function log_successful_login($email, $ip_address)
+	{
+		$data = array(
+			'email' => $email,
+			'ip_address' => $ip_address,
+			'login_time' => date('Y-m-d H:i:s')
+		);
+		$this->db->insert('login_logs', $data);
+	}
+	
+	public function store_remember_token($user_id, $token, $expiry)
+	{
+		$data = array(
+			'user_id' => $user_id,
+			'token' => $token,
+			'expires_at' => date('Y-m-d H:i:s', $expiry),
+			'created_at' => date('Y-m-d H:i:s')
+		);
+		$this->db->insert('remember_tokens', $data);
+	}
+	
+	public function get_user_by_remember_token($token)
+	{
+		$this->db->select('u.*');
+		$this->db->from('user u');
+		$this->db->join('remember_tokens rt', 'u.id = rt.user_id');
+		$this->db->where('rt.token', $token);
+		$this->db->where('rt.expires_at >', date('Y-m-d H:i:s'));
+		$query = $this->db->get();
+		return $query->row();
+	}
+	
+	public function delete_remember_token($token)
+	{
+		$this->db->where('token', $token);
+		$this->db->delete('remember_tokens');
+	}
 	
 }

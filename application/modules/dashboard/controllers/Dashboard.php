@@ -20,6 +20,7 @@ public function home()
 		$data['uptitle'] = "Country";
 		$data['uptitle'] = "Region";
 		$data['countries'] = $this->lists_mdl->get_memberstates();
+		$data['regions'] = $this->lists_mdl->get_regions();
 		$data['thematic_areas'] = $this->lists_mdl->get_thematic_areas();
 		//dd($data);
 		$data['diseases'] =$this->lists_mdl->get_diseases();

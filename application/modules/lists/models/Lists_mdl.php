@@ -50,6 +50,22 @@ public function get_region_by_memberstates($memberstate_id){
         $this->db->order_by('member_state','ASC');
 return  $this->db->get('member_states')->row()->region_id;
 }
+
+public function get_region_by_memberstate_id($memberstate_id){
+        $this->db->select('r.*, ms.member_state, ms.iso2_code, ms.iso3_code');
+        $this->db->from('regions r');
+        $this->db->join('member_states ms', 'r.id = ms.region_id');
+        $this->db->where('ms.id', $memberstate_id);
+        return $this->db->get()->row_array();
+}
+
+public function get_memberstate_with_region($memberstate_id){
+        $this->db->select('ms.*, r.name as region_name');
+        $this->db->from('member_states ms');
+        $this->db->join('regions r', 'r.id = ms.region_id');
+        $this->db->where('ms.id', $memberstate_id);
+        return $this->db->get()->row_array();
+}
 public function get_prioritisation_categories(){
 return  $this->db->get('priotisation_category')->result_array();
 

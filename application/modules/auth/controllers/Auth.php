@@ -16,47 +16,81 @@ class Auth extends MX_Controller
 
   public function login()
   {
+      // Clear any previous error messages
       $this->session->unset_userdata('error_message');
+      
+      // Load form validation library
+      $this->load->library('form_validation');
+      
+      // Set validation rules
+      $this->form_validation->set_rules('email', 'Email', 'required|valid_email|trim');
+      $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]|trim');
+      
+      // Run validation
+      if ($this->form_validation->run() === FALSE) {
+          $errors = $this->form_validation->error_array();
+          $error_message = implode('<br>', $errors);
+          $this->session->set_flashdata('error_message', $error_message);
+          redirect('auth');
+      }
   
       $postdata = $this->input->post();
-  
       $email = $postdata['email'];
       $password = $postdata['password'];
-      //dd($this->argonhash->make($password));
-      // dd($this->argonhash->make('admin123'));
+      $remember_me = isset($postdata['remember_me']) ? $postdata['remember_me'] : false;
+  
+      // Rate limiting check (simple implementation)
+      $this->check_login_attempts($email);
   
       // Fetch user data from database
       $user = $this->auth_mdl->login(['email' => $email]);
   
       // Check if user exists
       if (empty($user)) {
-          $this->session->set_flashdata('error_message', 'Invalid Email');
+          $this->log_failed_attempt($email, 'Invalid email');
+          $this->session->set_flashdata('error_message', 'Invalid email address or password.');
           redirect('auth');
       }
-      else if($this->validate_password($password, $user->password)) {
-        
+      
+      // Check if user is active
+      if ($user->status != 1) {
+          $this->log_failed_attempt($email, 'Account disabled');
+          $this->session->set_flashdata('error_message', 'Your account has been disabled. Please contact your administrator.');
+          redirect('auth');
+      }
+      
+      // Validate password
+      if (!$this->validate_password($password, $user->password)) {
+          $this->log_failed_attempt($email, 'Invalid password');
+          $this->session->set_flashdata('error_message', 'Invalid email address or password.');
+          redirect('auth');
+      }
+      
+      // Clear failed attempts on successful login
+      $this->clear_failed_attempts($email);
   
-      // Ensure user data is an array
-      $user = (array) $user;
-      unset($user['password']);
+      // Prepare user data for session
+      $user_data = (array) $user;
+      unset($user_data['password']);
   
       // Retrieve additional user access details
-      $user['permissions'] = $this->auth_mdl->user_permissions($user['role']);
-      if($user['role']==10){
-      $user['is_admin']    = true;
+      $user_data['permissions'] = $this->auth_mdl->user_permissions($user_data['role']);
+      $user_data['is_admin'] = ($user_data['role'] == 10);
+      $user_data['last_login'] = date('Y-m-d H:i:s');
+      
+      // Set session data
+      $this->session->set_userdata($user_data);
+      
+      // Handle remember me functionality
+      if ($remember_me) {
+          $this->set_remember_me_cookie($user_data['id']);
       }
-      else{
-        $user['is_admin']    = false;
-      }
-      $this->session->set_userdata($user);
+      
+      // Log successful login
+      $this->log_successful_login($email);
    
       // Redirect to dashboard or intended page
       redirect('records');
-    }
-    else{
-      $this->session->set_flashdata('error_message', 'Invalid Password');
-    redirect('auth');
-    }
   }
   public function validate_password($post_password,$dbpassword){
     $auth = ($this->argonhash->check($post_password, $dbpassword));
@@ -292,6 +326,49 @@ class Auth extends MX_Controller
     session_unset();
     session_destroy(); 
     redirect( 'auth');
+  }
+
+  // Security helper methods
+  private function check_login_attempts($email)
+  {
+      $this->load->model('auth_mdl');
+      $attempts = $this->auth_mdl->get_failed_attempts($email);
+      
+      if ($attempts >= 5) { // Max 5 attempts
+          $this->session->set_flashdata('error_message', 'Too many failed login attempts. Please try again in 15 minutes.');
+          redirect('auth');
+      }
+  }
+  
+  private function log_failed_attempt($email, $reason)
+  {
+      $this->load->model('auth_mdl');
+      $this->auth_mdl->log_failed_attempt($email, $reason, $this->input->ip_address());
+  }
+  
+  private function clear_failed_attempts($email)
+  {
+      $this->load->model('auth_mdl');
+      $this->auth_mdl->clear_failed_attempts($email);
+  }
+  
+  private function log_successful_login($email)
+  {
+      $this->load->model('auth_mdl');
+      $this->auth_mdl->log_successful_login($email, $this->input->ip_address());
+  }
+  
+  private function set_remember_me_cookie($user_id)
+  {
+      $token = bin2hex(random_bytes(32));
+      $expiry = time() + (30 * 24 * 60 * 60); // 30 days
+      
+      // Store token in database
+      $this->load->model('auth_mdl');
+      $this->auth_mdl->store_remember_token($user_id, $token, $expiry);
+      
+      // Set cookie
+      setcookie('remember_token', $token, $expiry, '/', '', false, true);
   }
 
 }

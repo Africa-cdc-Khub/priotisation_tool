@@ -16,7 +16,8 @@
 
 	<!-- Icons css -->
 	<link href="<?php echo base_url() ?>assets/css/icons.css" rel="stylesheet">
-    
+    <!-- Select2 CSS and JS -->
+	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 	<!-- Bootstrap css -->
 	<link rel="stylesheet" href="<?php echo base_url() ?>assets/plugins/bootstrap/css/bootstrap.min.css">
 	
@@ -40,17 +41,23 @@
     
     <link rel="stylesheet" type="text/css"
 	href="https://cdn.datatables.net/v/dt/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.css" />
+	
+	<!-- DataTables Buttons CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.3/css/buttons.dataTables.min.css" />
+	
+	<!-- DataTables Responsive CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css" />
+	
+	<!-- DataTables Print Button CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.3/css/buttons.bootstrap5.min.css" />
 
 	<link href="<?php echo base_url() ?>assets/plugins/jqvmap/jqvmap.min.css" rel="stylesheet">
 	<!-- Animations css -->
 
 	<link href="<?php echo base_url() ?>assets/css/animate.css" rel="stylesheet">
-	<!-- jQuery -->
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/lobibox@1.2.7/dist/js/lobibox.min.js"></script>
-
+	
+	<!-- Highcharts -->
 	<script src="https://code.highcharts.com/highcharts.js"></script>
-
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 	<script src="https://code.highcharts.com/modules/export-data.js"></script>
 	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
@@ -60,8 +67,8 @@
 	<script src="https://code.highcharts.com/modules/boost.js"></script>
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
 	<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-
-
+	<script src="https://code.highcharts.com/modules/map.js"></script>
+	
 
 
 	<style>
