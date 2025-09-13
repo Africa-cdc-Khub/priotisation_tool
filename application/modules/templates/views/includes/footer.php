@@ -901,6 +901,10 @@ $(document).ready(function() {
                             options += '<option value="' + country.id + '">' + country.member_state + '</option>';
                         });
                         $('#member_state').html(options);
+                        
+                        // Load data after region change
+                        loadMapData();
+                        refreshDataTable();
                     } else {
                         $('#member_state').html('<option value="">No countries found</option>');
                     }
@@ -911,9 +915,17 @@ $(document).ready(function() {
                 }
             });
         } else {
-            // Reset to default options
+            // Reset to default options and load all data
             $('#member_state').html('<option value="">All Countries</option>');
+            loadMapData();
+            refreshDataTable();
         }
+    });
+    
+    // Member state change handler
+    $('#member_state').on('change', function() {
+        loadMapData();
+        refreshDataTable();
     });
 
     // Initialize components with proper delays
@@ -924,6 +936,7 @@ $(document).ready(function() {
     
     let initTimeout2 = setTimeout(function() {
         loadMapData();
+        refreshDataTable();
     }, 1500);
     
     // Filter buttons
@@ -948,6 +961,14 @@ $(document).ready(function() {
         // Only initialize if we're on the dashboard page
         if ($('#ranking-datatable').length > 0) {
             initializeDataTable();
+            
+            // Refresh DataTable after initialization to load data
+            setTimeout(function() {
+                if (dataTable) {
+                    console.log('Refreshing DataTable to load initial data...');
+                    dataTable.ajax.reload();
+                }
+            }, 1000);
         }
     }, 3000); // Increased delay to ensure all libraries are loaded
     
