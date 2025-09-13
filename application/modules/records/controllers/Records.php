@@ -59,10 +59,14 @@ class Records extends CI_Controller
 
 	public function get_map_data()
 {
-	$member_state_id = $this->input->post('member_state_id');
-	$period = $this->input->post('period');
-	$thematic_area_id = $this->input->post('thematic_area_id');
-	$prioritisation_category_id = $this->input->post('prioritisation_category_id');
+	try {
+		$member_state_id = $this->input->post('member_state_id');
+		$period = $this->input->post('period');
+		$thematic_area_id = $this->input->post('thematic_area_id');
+		$prioritisation_category_id = $this->input->post('prioritisation_category_id');
+		
+		// Log the received parameters
+		log_message('debug', 'Map data request - member_state_id: ' . $member_state_id . ', period: ' . $period . ', thematic_area_id: ' . $thematic_area_id . ', prioritisation_category_id: ' . $prioritisation_category_id);
 
 	// Build query based on filters
 	$this->db->select('
@@ -169,6 +173,11 @@ class Records extends CI_Controller
 	}
 	
 	echo json_encode(['status' => 'success', 'data' => $mapData]);
+	
+	} catch (Exception $e) {
+		log_message('error', 'Map data error: ' . $e->getMessage());
+		echo json_encode(['status' => 'error', 'message' => 'Error loading map data: ' . $e->getMessage()]);
+	}
 }
 
 	public function get_summary_data()
@@ -378,7 +387,7 @@ class Records extends CI_Controller
 			safe_number_format($row['mort'], 2),
 			safe_number_format($row['composite_index'], 2),
 			safe_number_format($row['probability'], 2),
-			safe_number_format($row['priority_level'], 2),
+			$row['priority_level'], // Text field (High, Medium, Low)
 			$row['draft_status'] == 1 ? '<span class="badge badge-warning">Draft</span>' : '<span class="badge badge-success">Final</span>',
 			$row['created_at'],
 			$row['updated_at']
