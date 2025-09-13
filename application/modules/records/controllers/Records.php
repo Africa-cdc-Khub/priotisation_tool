@@ -68,111 +68,126 @@ class Records extends CI_Controller
 		// Log the received parameters
 		log_message('debug', 'Map data request - member_state_id: ' . $member_state_id . ', period: ' . $period . ', thematic_area_id: ' . $thematic_area_id . ', prioritisation_category_id: ' . $prioritisation_category_id);
 
-	// Build query based on filters
-	$this->db->select('
-		ms.id,
-		ms.member_state,
-		ms.iso3_code,
-		r.name as region_name,
-		COUNT(msdd.id) as total_diseases,
-		AVG(CASE 
-			WHEN msdd.priority_level = "High" THEN 3
-			WHEN msdd.priority_level = "Medium" THEN 2
-			WHEN msdd.priority_level = "Low" THEN 1
-			ELSE NULL 
-		END) as avg_priority,
-		GROUP_CONCAT(DISTINCT CONCAT(d.name, ":", msdd.priority_level, ":", msdd.probability) ORDER BY 
-			CASE 
+		// Build query based on filters
+		$this->db->select('
+			ms.id,
+			ms.member_state,
+			ms.iso3_code,
+			r.name as region_name,
+			COUNT(msdd.id) as total_diseases,
+			AVG(CASE 
 				WHEN msdd.priority_level = "High" THEN 3
 				WHEN msdd.priority_level = "Medium" THEN 2
 				WHEN msdd.priority_level = "Low" THEN 1
-				ELSE 0
-			END DESC, msdd.probability DESC SEPARATOR "|") as disease_priorities
-	');
-	$this->db->from('member_states ms');
-	$this->db->join('regions r', 'ms.region_id = r.id', 'left');
-	$this->db->join('member_state_diseases_data msdd', 'ms.id = msdd.member_state_id', 'left');
-	$this->db->join('diseases_and_conditions d', 'msdd.disease_id = d.id', 'left');
+				ELSE NULL 
+			END) as avg_priority,
+			GROUP_CONCAT(DISTINCT CONCAT(d.name, ":", msdd.priority_level, ":", COALESCE(msdd.probability, 0)) ORDER BY 
+				CASE 
+					WHEN msdd.priority_level = "High" THEN 3
+					WHEN msdd.priority_level = "Medium" THEN 2
+					WHEN msdd.priority_level = "Low" THEN 1
+					ELSE 0
+				END DESC, COALESCE(msdd.probability, 0) DESC SEPARATOR "|") as disease_priorities
+		');
+		$this->db->from('member_states ms');
+		$this->db->join('regions r', 'ms.region_id = r.id', 'left');
+		$this->db->join('member_state_diseases_data msdd', 'ms.id = msdd.member_state_id', 'left');
+		$this->db->join('diseases_and_conditions d', 'msdd.disease_id = d.id', 'left');
 	
-	// Apply filters
-	if ($member_state_id) {
-		$this->db->where('ms.id', $member_state_id);
-	}
-	if ($period) {
-		$this->db->where('msdd.period', $period);
-	}
-	if ($thematic_area_id) {
-		$this->db->join('disease_thematic_areas dta', 'd.id = dta.disease_id', 'left');
-		$this->db->where('dta.thematic_area_id', $thematic_area_id);
-	}
-	if ($prioritisation_category_id) {
-		$this->db->where('msdd.prioritisation_category', $prioritisation_category_id);
-	}
+		// Apply filters
+		if ($member_state_id) {
+			$this->db->where('ms.id', $member_state_id);
+		}
+		if ($period) {
+			$this->db->where('msdd.period', $period);
+		}
+		if ($thematic_area_id) {
+			$this->db->join('disease_thematic_areas dta', 'd.id = dta.disease_id', 'left');
+			$this->db->where('dta.thematic_area_id', $thematic_area_id);
+		}
+		if ($prioritisation_category_id) {
+			$this->db->where('msdd.prioritisation_category', $prioritisation_category_id);
+		}
+		
+		$this->db->group_by('ms.id, ms.member_state, ms.iso3_code, r.name');
+		$this->db->order_by('total_diseases', 'DESC');
 	
-	$this->db->group_by('ms.id, ms.member_state, ms.iso3_code, r.name');
-	$this->db->order_by('total_diseases', 'DESC');
+		$query = $this->db->get();
+		
+		// Log the generated SQL query for debugging
+		log_message('debug', 'Map data SQL: ' . $this->db->last_query());
+		
+		if ($this->db->error()['code'] != 0) {
+			log_message('error', 'Database error: ' . $this->db->error()['message']);
+			throw new Exception('Database error: ' . $this->db->error()['message']);
+		}
+		
+		$results = $query->result_array();
+		log_message('debug', 'Map data results count: ' . count($results));
 	
-	$query = $this->db->get();
-	$results = $query->result_array();
-	
-	// Process results to include disease details
-	$mapData = [];
-	foreach ($results as $row) {
-		$diseases = [];
-		if ($row['disease_priorities']) {
-			$diseasePriorityPairs = explode('|', $row['disease_priorities']);
-			
-			// Limit to top 5 diseases per country
-			$diseasePriorityPairs = array_slice($diseasePriorityPairs, 0, 5);
-			
-			foreach ($diseasePriorityPairs as $pair) {
-				$parts = explode(':', $pair);
-				if (count($parts) == 3) {
-					$diseases[] = [
-						'name' => $parts[0],
-						'priority_level' => $parts[1], // Keep as text (High, Medium, Low)
-						'probability' => (float)$parts[2]
-					];
+		// Process results to include disease details
+		$mapData = [];
+		foreach ($results as $row) {
+			try {
+				$diseases = [];
+				if ($row['disease_priorities']) {
+					$diseasePriorityPairs = explode('|', $row['disease_priorities']);
+					
+					// Limit to top 5 diseases per country
+					$diseasePriorityPairs = array_slice($diseasePriorityPairs, 0, 5);
+					
+					foreach ($diseasePriorityPairs as $pair) {
+						$parts = explode(':', $pair);
+						if (count($parts) == 3) {
+							$diseases[] = [
+								'name' => $parts[0],
+								'priority_level' => $parts[1], // Keep as text (High, Medium, Low)
+								'probability' => (float)$parts[2]
+							];
+						}
+					}
 				}
+				
+				// Calculate average priority from the diseases array
+				$avgPriority = 0;
+				if (!empty($diseases)) {
+					$priorityValues = [];
+					foreach ($diseases as $disease) {
+						switch ($disease['priority_level']) {
+							case 'High':
+								$priorityValues[] = 3;
+								break;
+							case 'Medium':
+								$priorityValues[] = 2;
+								break;
+							case 'Low':
+								$priorityValues[] = 1;
+								break;
+						}
+					}
+					if (!empty($priorityValues)) {
+						$avgPriority = array_sum($priorityValues) / count($priorityValues);
+					}
+				} elseif ($row['avg_priority']) {
+					$avgPriority = (float)$row['avg_priority'];
+				}
+				
+				$mapData[] = [
+					'id' => $row['id'],
+					'member_state' => $row['member_state'],
+					'iso3_code' => $row['iso3_code'],
+					'region_name' => $row['region_name'],
+					'total_diseases' => (int)$row['total_diseases'],
+					'avg_priority' => round($avgPriority, 2),
+					'diseases' => $diseases
+				];
+			} catch (Exception $e) {
+				log_message('error', 'Error processing row: ' . $e->getMessage() . ' - Row data: ' . json_encode($row));
+				// Continue processing other rows
 			}
 		}
 		
-		// Calculate average priority from the diseases array
-		$avgPriority = 0;
-		if (!empty($diseases)) {
-			$priorityValues = [];
-			foreach ($diseases as $disease) {
-				switch ($disease['priority_level']) {
-					case 'High':
-						$priorityValues[] = 3;
-						break;
-					case 'Medium':
-						$priorityValues[] = 2;
-						break;
-					case 'Low':
-						$priorityValues[] = 1;
-						break;
-				}
-			}
-			if (!empty($priorityValues)) {
-				$avgPriority = array_sum($priorityValues) / count($priorityValues);
-			}
-		} elseif ($row['avg_priority']) {
-			$avgPriority = (float)$row['avg_priority'];
-		}
-		
-		$mapData[] = [
-			'id' => $row['id'],
-			'member_state' => $row['member_state'],
-			'iso3_code' => $row['iso3_code'],
-			'region_name' => $row['region_name'],
-			'total_diseases' => (int)$row['total_diseases'],
-			'avg_priority' => round($avgPriority, 2),
-			'diseases' => $diseases
-		];
-	}
-	
-	echo json_encode(['status' => 'success', 'data' => $mapData]);
+		echo json_encode(['status' => 'success', 'data' => $mapData]);
 	
 	} catch (Exception $e) {
 		log_message('error', 'Map data error: ' . $e->getMessage());
