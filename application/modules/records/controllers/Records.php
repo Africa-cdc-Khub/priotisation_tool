@@ -71,9 +71,19 @@ class Records extends CI_Controller
 		ms.iso3_code,
 		r.name as region_name,
 		COUNT(msdd.id) as total_diseases,
-		AVG(msdd.priority_level) as avg_priority,
-		GROUP_CONCAT(DISTINCT d.name ORDER BY msdd.priority_level DESC SEPARATOR "|") as disease_names,
-		GROUP_CONCAT(DISTINCT msdd.priority_level ORDER BY msdd.priority_level DESC SEPARATOR "|") as priority_levels
+		AVG(CASE 
+			WHEN msdd.priority_level = "High" THEN 3
+			WHEN msdd.priority_level = "Medium" THEN 2
+			WHEN msdd.priority_level = "Low" THEN 1
+			ELSE NULL 
+		END) as avg_priority,
+		GROUP_CONCAT(DISTINCT CONCAT(d.name, ":", msdd.priority_level, ":", msdd.probability) ORDER BY 
+			CASE 
+				WHEN msdd.priority_level = "High" THEN 3
+				WHEN msdd.priority_level = "Medium" THEN 2
+				WHEN msdd.priority_level = "Low" THEN 1
+				ELSE 0
+			END DESC, msdd.probability DESC SEPARATOR "|") as disease_priorities
 	');
 	$this->db->from('member_states ms');
 	$this->db->join('regions r', 'ms.region_id = r.id', 'left');
@@ -105,16 +115,46 @@ class Records extends CI_Controller
 	$mapData = [];
 	foreach ($results as $row) {
 		$diseases = [];
-		if ($row['disease_names']) {
-			$diseaseNames = explode('|', $row['disease_names']);
-			$priorityLevels = explode('|', $row['priority_levels']);
+		if ($row['disease_priorities']) {
+			$diseasePriorityPairs = explode('|', $row['disease_priorities']);
 			
-			for ($i = 0; $i < count($diseaseNames); $i++) {
-				$diseases[] = [
-					'name' => $diseaseNames[$i],
-					'priority_level' => isset($priorityLevels[$i]) ? $priorityLevels[$i] : 0
-				];
+			// Limit to top 5 diseases per country
+			$diseasePriorityPairs = array_slice($diseasePriorityPairs, 0, 5);
+			
+			foreach ($diseasePriorityPairs as $pair) {
+				$parts = explode(':', $pair);
+				if (count($parts) == 3) {
+					$diseases[] = [
+						'name' => $parts[0],
+						'priority_level' => $parts[1], // Keep as text (High, Medium, Low)
+						'probability' => (float)$parts[2]
+					];
+				}
 			}
+		}
+		
+		// Calculate average priority from the diseases array
+		$avgPriority = 0;
+		if (!empty($diseases)) {
+			$priorityValues = [];
+			foreach ($diseases as $disease) {
+				switch ($disease['priority_level']) {
+					case 'High':
+						$priorityValues[] = 3;
+						break;
+					case 'Medium':
+						$priorityValues[] = 2;
+						break;
+					case 'Low':
+						$priorityValues[] = 1;
+						break;
+				}
+			}
+			if (!empty($priorityValues)) {
+				$avgPriority = array_sum($priorityValues) / count($priorityValues);
+			}
+		} elseif ($row['avg_priority']) {
+			$avgPriority = (float)$row['avg_priority'];
 		}
 		
 		$mapData[] = [
@@ -123,7 +163,7 @@ class Records extends CI_Controller
 			'iso3_code' => $row['iso3_code'],
 			'region_name' => $row['region_name'],
 			'total_diseases' => (int)$row['total_diseases'],
-			'avg_priority' => (float)$row['avg_priority'],
+			'avg_priority' => round($avgPriority, 2),
 			'diseases' => $diseases
 		];
 	}

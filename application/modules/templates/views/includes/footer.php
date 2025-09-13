@@ -1193,17 +1193,16 @@ function renderOpenStreetMap(mapData) {
     mapData.forEach(function(item) {
         const coords = countryCoords[item.iso3_code];
         if (coords) {
-            const priority = item.avg_priority || 0;
             const diseaseCount = item.total_diseases || 0;
             
-            // Color based on priority level
-            let color = '#28a745'; // Green for low priority
+            // Color based on disease count (more diseases = higher priority)
+            let color = '#28a745'; // Green for low count
             let opacity = 0.3;
-            if (priority > 7) {
-                color = '#dc3545'; // Red for high priority
+            if (diseaseCount >= 8) {
+                color = '#dc3545'; // Red for high count
                 opacity = 0.7;
-            } else if (priority > 4) {
-                color = '#ffc107'; // Yellow for medium priority
+            } else if (diseaseCount >= 4) {
+                color = '#ffc107'; // Yellow for medium count
                 opacity = 0.5;
             }
             
@@ -1219,26 +1218,27 @@ function renderOpenStreetMap(mapData) {
             
             // Create popup content with English labels
             const popupContent = `
-                <div style="min-width: 250px; font-family: Arial, sans-serif;">
+                <div style="min-width: 400px; max-width: 450px; font-family: Arial, sans-serif;">
                     <div style="text-align: center; margin-bottom: 10px;">
-                        <h5 style="margin: 0; color: #2c3e50; font-weight: bold;"><strong>${item.member_state}</strong></h5>
-                        <small style="color: #6c757d; font-size: 12px;">${item.region_name || 'N/A'}</small>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                        <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 5px;">
-                            <div style="font-size: 18px; font-weight: bold; color: #007bff;">${diseaseCount}</div>
-                            <div style="font-size: 12px; color: #6c757d;">Total Diseases</div>
-                        </div>
-                        <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 5px;">
-                            <div style="font-size: 18px; font-weight: bold; color: ${priority > 7 ? '#dc3545' : priority > 4 ? '#ffc107' : '#28a745'};">${priority.toFixed(1)}</div>
-                            <div style="font-size: 12px; color: #6c757d;">Avg Priority</div>
-                        </div>
+                        <h6 style="margin: 0; color: #2c3e50; font-weight: bold; font-size: 14px;"><strong>${item.member_state}</strong></h6>
+                        <small style="color: #6c757d; font-size: 10px;">${item.region_name || 'N/A'}</small>
+                        <div style="color: #007bff; font-size: 9px; margin-top: 2px;">${diseaseCount} diseases</div>
                     </div>
                     <div>
-                        <strong style="color: #2c3e50; font-size: 13px;">Top Diseases:</strong>
-                        <ul style="margin: 5px 0 0 0; padding-left: 15px; font-size: 13px;">
-                            ${item.diseases ? item.diseases.slice(0, 3).map(d => `<li style="margin: 2px 0; color: #2c3e50;">${d.name}</li>`).join('') : '<li style="color: #6c757d;">No data available</li>'}
-                        </ul>
+                        <strong style="color: #2c3e50; font-size: 13px;">Priority Diseases (Top 5):</strong>
+                        <div style="max-height: 150px; overflow-y: auto; margin-top: 5px;">
+                            ${item.diseases && item.diseases.length > 0 ? 
+                                item.diseases.map(d => {
+                                    return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #f0f0f0;">
+                                        <div style="flex: 1;">
+                                            <div style="color: #2c3e50; font-size: 11px; font-weight: 500;">${d.name}</div>
+                                            <div style="color: #6c757d; font-size: 9px;">Probability: ${(d.probability * 100).toFixed(1)}%</div>
+                                        </div>
+                                    </div>`;
+                                }).join('') : 
+                                '<div style="color: #6c757d; font-size: 12px; text-align: center; padding: 10px;">No disease data available</div>'
+                            }
+                        </div>
                     </div>
                 </div>
             `;
@@ -1265,33 +1265,6 @@ function renderOpenStreetMap(mapData) {
         map.removeControl(window.mapLegend);
         window.mapLegend = null;
     }
-    
-    // Add legend with English labels
-    const legend = L.control({position: 'bottomright'});
-    legend.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'map-legend');
-        div.style.cssText = 'background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 12px; font-family: Arial, sans-serif;';
-        div.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Priority Level</div>
-            <div style="display: flex; align-items: center; margin: 3px 0;">
-                <div style="width: 15px; height: 15px; background: #28a745; margin-right: 8px; border-radius: 3px;"></div>
-                <span style="color: #2c3e50;">Low (0-4)</span>
-            </div>
-            <div style="display: flex; align-items: center; margin: 3px 0;">
-                <div style="width: 15px; height: 15px; background: #ffc107; margin-right: 8px; border-radius: 3px;"></div>
-                <span style="color: #2c3e50;">Medium (4-7)</span>
-            </div>
-            <div style="display: flex; align-items: center; margin: 3px 0;">
-                <div style="width: 15px; height: 15px; background: #dc3545; margin-right: 8px; border-radius: 3px;"></div>
-                <span style="color: #2c3e50;">High (7+)</span>
-            </div>
-        `;
-        return div;
-    };
-    legend.addTo(map);
-    
-    // Store legend reference for future removal
-    window.mapLegend = legend;
     
     console.log('OpenStreetMap markers added successfully');
 }
