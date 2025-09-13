@@ -102,8 +102,7 @@ class Records extends CI_Controller
 			$this->db->where('msdd.period', $period);
 		}
 		if ($thematic_area_id) {
-			$this->db->join('disease_thematic_areas dta', 'd.id = dta.disease_id', 'left');
-			$this->db->where('dta.thematic_area_id', $thematic_area_id);
+			$this->db->where('d.thematic_area_id', $thematic_area_id);
 		}
 		if ($prioritisation_category_id) {
 			$this->db->where('msdd.prioritisation_category', $prioritisation_category_id);
