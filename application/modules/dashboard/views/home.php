@@ -65,10 +65,10 @@
                             <div class="col-lg-2 col-md-4 col-sm-6">
                                 <label class="form-label">Country</label>
                                 <select id="member_state" class="form-control form-control-sm" <?php if(!$this->session->userdata('is_admin')): ?> disabled <?php endif; ?>>
-                                    <option value="">All Countries</option>
+                                    <option value="" <?php if($this->session->userdata('is_admin')): ?>selected<?php endif; ?>>All Countries</option>
                                     <?php foreach ($countries as $country): ?>
                                         <option value="<?= $country['id'] ?>" 
-                                            <?php if($this->session->userdata('memberstate_id') == $country['id']){ echo "selected"; } ?>>
+                                            <?php if(!$this->session->userdata('is_admin') && $this->session->userdata('memberstate_id') == $country['id']){ echo "selected"; } ?>>
                                             <?= $country['member_state'] ?>
                                         </option>
                                     <?php endforeach; ?>
