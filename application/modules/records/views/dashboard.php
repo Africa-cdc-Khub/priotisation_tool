@@ -57,12 +57,10 @@
                     </label>
                     <select id="region" class="form-control form-control-sm" 
                         <?php if (!$is_admin): ?> disabled <?php endif; ?>>
-                        <option value="">All Regions</option>
+                        <option value="" <?php if ($is_admin): ?>selected<?php endif; ?>>All Regions</option>
                         <?php foreach ($regions as $region): ?>
                             <option value="<?= $region['id'] ?>" 
                                 <?php if (!$is_admin && isset($user_region) && $user_region['id'] == $region['id']): ?>
-                                    selected
-                                <?php elseif ($is_admin && $this->session->userdata('region_id') == $region['id']): ?>
                                     selected
                                 <?php endif; ?>>
                                 <?= $region['name'] ?>
@@ -83,11 +81,12 @@
                     </label>
                     <select id="member_state" class="form-control form-control-sm" 
                         <?php if (!$is_admin): ?> disabled <?php endif; ?>>
+                        <?php if ($is_admin): ?>
+                            <option value="" selected>All Countries</option>
+                        <?php endif; ?>
                         <?php foreach ($countries as $country): ?>
                             <option value="<?= $country['id'] ?>" 
                                 <?php if (!$is_admin && isset($user_memberstate) && $user_memberstate['id'] == $country['id']): ?>
-                                    selected
-                                <?php elseif ($is_admin && $this->session->userdata('memberstate_id') == $country['id']): ?>
                                     selected
                                 <?php endif; ?>>
                                 <?= $country['member_state'] ?>
@@ -250,6 +249,9 @@ $(document).ready(function() {
     <?php if (!$is_admin && isset($user_region)): ?>
     // Set the region value and trigger change for non-admin users
     $('#region').val('<?= $user_region['id'] ?>').trigger('change');
+    <?php else: ?>
+    // For admin users, load data by default with "All Regions" selected
+    loadInitialData();
     <?php endif; ?>
 
     $('#region').on('change', function() {
@@ -286,8 +288,46 @@ $(document).ready(function() {
                 }
             });
         } else {
+            // For admin users, show "All Countries" option when no region is selected
+            <?php if ($is_admin): ?>
+            $('#member_state').html('<option value="" selected>All Countries</option>');
+            <?php else: ?>
             $('#member_state').html('<option value="">-- Select Country --</option>');
+            <?php endif; ?>
         }
+        
+        // Load data when region changes
+        loadData();
     });
+    
+    // Member state change handler
+    $('#member_state').on('change', function() {
+        loadData();
+    });
+    
+    // Function to load initial data for admin users
+    function loadInitialData() {
+        console.log('Loading initial data for admin user...');
+        // Wait for footer.js to load, then load data
+        setTimeout(function() {
+            loadData();
+        }, 2000);
+    }
+    
+    // Function to load data (charts, map, etc.)
+    function loadData() {
+        console.log('Loading data...');
+        // This will be handled by the footer.js which contains the actual data loading functions
+        // The footer.js will detect the filter values and load appropriate data
+        if (typeof loadMapData === 'function') {
+            loadMapData();
+        }
+        if (typeof refreshDataTable === 'function') {
+            refreshDataTable();
+        }
+        if (typeof handleFilterChange === 'function') {
+            handleFilterChange();
+        }
+    }
 });
 </script>
