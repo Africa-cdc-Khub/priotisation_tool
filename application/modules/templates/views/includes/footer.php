@@ -1012,49 +1012,48 @@ $(document).ready(function() {
 });
 
 function initializeAfricaMap() {
-    console.log('Initializing Africa map with OpenStreetMap...');
+    console.log('Initializing Africa map with Highcharts...');
     
-    // Use OpenStreetMap instead of Highcharts map
-    initializeOpenStreetMap();
+    // Use Highcharts map for better country visualization
+    initializeHighchartsMap();
 }
 
-function initializeOpenStreetMap() {
+function initializeHighchartsMap() {
     const container = document.getElementById('africa-map');
     if (!container) {
         console.error('Africa map container not found');
         return;
     }
     
-    console.log('Initializing OpenStreetMap...');
+    console.log('Initializing Highcharts Africa map...');
     
-    // Load Leaflet CSS and JS
-    if (typeof L === 'undefined') {
-        // Load Leaflet CSS
-        if (!document.querySelector('link[href*="leaflet"]')) {
-            const leafletCSS = document.createElement('link');
-            leafletCSS.rel = 'stylesheet';
-            leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(leafletCSS);
-        }
-        
-        // Load Leaflet JS
-        $.getScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function() {
-            console.log('Leaflet loaded successfully');
-            createOpenStreetMap();
+    // Check if Highcharts is loaded
+    if (typeof Highcharts === 'undefined') {
+        console.log('Highcharts not loaded yet, waiting...');
+        setTimeout(initializeHighchartsMap, 500);
+        return;
+    }
+    
+    // Check if map module is loaded
+    if (typeof Highcharts.mapChart === 'undefined') {
+        console.log('Highcharts map module not loaded, loading...');
+        $.getScript('https://code.highcharts.com/maps/modules/map.js', function() {
+            console.log('Highcharts map module loaded');
+            createHighchartsMap();
         }).fail(function() {
-            console.error('Failed to load Leaflet');
+            console.error('Failed to load Highcharts map module');
             showMapFallback([]);
         });
     } else {
-        console.log('Leaflet already loaded');
-        createOpenStreetMap();
+        console.log('Highcharts map module available');
+        createHighchartsMap();
     }
 }
 
-function createOpenStreetMap() {
+function createHighchartsMap() {
     const container = document.getElementById('africa-map');
-    if (!container || typeof L === 'undefined') {
-        console.error('Container or Leaflet not available');
+    if (!container || typeof Highcharts === 'undefined') {
+        console.error('Container or Highcharts not available');
         return;
     }
     
@@ -1064,39 +1063,92 @@ function createOpenStreetMap() {
     // Clear container
     container.innerHTML = '';
     
-    // Initialize map centered on Africa with better bounds
-    const map = L.map('africa-map', {
-        center: [0, 20],
-        zoom: 3,
-        minZoom: 2,
-        maxZoom: 6,
-        zoomControl: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-        boxZoom: true,
-        keyboard: true,
-        dragging: true
+    // Create Highcharts Africa map
+    const map = Highcharts.mapChart('africa-map', {
+        chart: {
+            map: 'custom/africa',
+            backgroundColor: '#f8f9fa',
+            borderWidth: 0,
+            plotBackgroundColor: null,
+            plotBorderWidth: 0,
+            plotShadow: false,
+            height: 600
+        },
+        title: {
+            text: null
+        },
+        credits: {
+            enabled: false
+        },
+        mapNavigation: {
+            enabled: true,
+            buttonOptions: {
+                verticalAlign: 'bottom'
+            }
+        },
+        colorAxis: {
+            min: 0,
+            max: 10,
+            stops: [
+                [0, '#28a745'], // Green for low count
+                [0.5, '#ffc107'], // Yellow for medium count
+                [1, '#dc3545'] // Red for high count
+            ],
+            minColor: '#d2b48c', // Light brown for countries without data
+            maxColor: '#dc3545' // Red for high count
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            map: {
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.name}',
+                    style: {
+                        color: '#2c3e50',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        textOutline: '1px contrast',
+                        textShadow: '0 0 3px rgba(255,255,255,0.8)'
+                    }
+                }
+            }
+        },
+        series: [{
+            name: 'Disease Count',
+            mapData: Highcharts.maps['custom/africa'],
+            data: [], // Will be populated with actual data
+            joinBy: 'iso-a3',
+            nullColor: '#d2b48c', // Light brown for countries without data
+            states: {
+                hover: {
+                    brightness: 0.1
+                },
+                normal: {
+                    animation: true
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                format: '{point.name}',
+                style: {
+                    color: '#2c3e50',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    textOutline: '1px contrast'
+                }
+            },
+            tooltip: {
+                pointFormat: '{point.name}: {point.value} diseases'
+            }
+        }]
     });
-    
-    // Set Africa bounds to keep focus on Africa
-    const africaBounds = L.latLngBounds(
-        L.latLng(-35, -20), // Southwest corner
-        L.latLng(37, 55)    // Northeast corner
-    );
-    map.setMaxBounds(africaBounds);
-    
-    // Add CartoDB tiles with English labels for better readability
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-        maxZoom: 18,
-        subdomains: 'abcd',
-        variant: 'light_all'
-    }).addTo(map);
     
     // Store map reference for data loading
     window.africaMap = map;
     
-    console.log('OpenStreetMap initialized successfully');
+    console.log('Highcharts Africa map initialized successfully');
     
     // Load map data
     loadMapData();
@@ -1105,7 +1157,7 @@ function createOpenStreetMap() {
 // Removed loadAfricaMapData - using OpenStreetMap instead
 
 function loadMapData() {
-    console.log('Loading map data for OpenStreetMap...');
+    console.log('Loading map data for Highcharts...');
     
     const filters = {
         member_state_id: $('#member_state').val(),
@@ -1124,8 +1176,8 @@ function loadMapData() {
         success: function(response) {
             console.log('Map data response:', response);
             if (response.status === 'success') {
-                console.log('Map data loaded successfully, rendering OpenStreetMap...');
-                renderOpenStreetMap(response.data);
+                console.log('Map data loaded successfully, rendering Highcharts map...');
+                renderHighchartsMap(response.data);
             } else {
                 console.error('Map data response error:', response.message);
                 showMapFallback([]);
@@ -1303,6 +1355,75 @@ function renderOpenStreetMap(mapData) {
     }
     
     console.log('OpenStreetMap markers added successfully');
+}
+
+function renderHighchartsMap(mapData) {
+    console.log('Rendering Highcharts map with data:', mapData);
+    
+    if (!window.africaMap || typeof Highcharts === 'undefined') {
+        console.error('Map or Highcharts not available');
+        showMapFallback(mapData);
+        return;
+    }
+    
+    const map = window.africaMap;
+    
+    // Prepare data for Highcharts map
+    const mapDataArray = mapData.map(function(item) {
+        return {
+            'iso-a3': item.iso3_code,
+            name: item.member_state,
+            value: item.total_diseases || 0,
+            diseases: item.diseases || [],
+            region: item.region_name
+        };
+    });
+    
+    // Update the map series with new data
+    map.series[0].setData(mapDataArray);
+    
+    // Update tooltip to show disease details
+    map.update({
+        tooltip: {
+            useHTML: true,
+            formatter: function() {
+                const item = mapData.find(d => d.iso3_code === this.point['iso-a3']);
+                if (!item) return this.point.name + ': ' + this.point.value + ' diseases';
+                
+                const diseasesHtml = item.diseases.map(d => 
+                    `<tr>
+                        <td style="padding: 2px; font-size: 10px;">${d.name}</td>
+                        <td style="padding: 2px; font-size: 10px;">${(d.probability * 100).toFixed(1)}%</td>
+                    </tr>`
+                ).join('');
+                
+                return `
+                    <div style="min-width: 300px; max-width: 400px; font-family: Arial, sans-serif;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h6 style="margin: 0; color: #2c3e50; font-size: 14px;">${this.point.name}</h6>
+                            <small style="color: #6c757d; font-size: 10px;">${item.region_name}</small>
+                            <div style="font-size: 9px; color: #6c757d; margin-top: 2px;">${this.point.value} diseases</div>
+                        </div>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            <table class="table table-sm" style="margin: 0; font-size: 11px;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 4px; font-size: 10px;">Disease</th>
+                                        <th style="padding: 4px; font-size: 10px;">Probability</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${diseasesHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    });
+    
+    console.log('Highcharts map data updated successfully');
 }
 
 

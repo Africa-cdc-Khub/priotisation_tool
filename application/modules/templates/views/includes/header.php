@@ -57,9 +57,11 @@
 	<link href="<?php echo base_url() ?>assets/css/animate.css" rel="stylesheet">
 	
 	<!-- Highcharts -->
-	<script src="https://code.highcharts.com/highcharts.js"></script>
-	<script src="https://code.highcharts.com/modules/exporting.js"></script>
-	<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/maps/modules/map.js"></script>
+<script src="https://code.highcharts.com/mapdata/custom/africa.js"></script>
 	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
 	<script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
 	<script src="https://code.highcharts.com/modules/data.js"></script>
