@@ -1088,14 +1088,14 @@ function createHighchartsMap() {
         },
         colorAxis: {
             min: 0,
-            max: 10,
+            max: 1,
             stops: [
-                [0, '#28a745'], // Green for low count
-                [0.5, '#ffc107'], // Yellow for medium count
-                [1, '#dc3545'] // Red for high count
+                [0, '#28a745'], // Green for low probability (0-0.33)
+                [0.33, '#ffc107'], // Yellow for medium probability (0.33-0.66)
+                [0.66, '#dc3545'] // Red for high probability (0.66-1.0)
             ],
             minColor: '#d2b48c', // Light brown for countries without data
-            maxColor: '#dc3545' // Red for high count
+            maxColor: '#dc3545' // Red for high probability
         },
         legend: {
             enabled: false
@@ -1140,7 +1140,7 @@ function createHighchartsMap() {
                 }
             },
             tooltip: {
-                pointFormat: '{point.name}: {point.value} diseases'
+                pointFormat: '{point.name}: {point.value:.1%} avg probability'
             }
         }]
     });
@@ -1370,12 +1370,20 @@ function renderHighchartsMap(mapData) {
     
     // Prepare data for Highcharts map
     const mapDataArray = mapData.map(function(item) {
+        // Calculate overall probability for the country
+        let overallProbability = 0;
+        if (item.diseases && item.diseases.length > 0) {
+            const totalProbability = item.diseases.reduce((sum, disease) => sum + (disease.probability || 0), 0);
+            overallProbability = totalProbability / item.diseases.length; // Average probability
+        }
+        
         return {
             'iso-a3': item.iso3_code,
             name: item.member_state,
-            value: item.total_diseases || 0,
+            value: overallProbability, // Use probability instead of disease count
             diseases: item.diseases || [],
-            region: item.region_name
+            region: item.region_name,
+            totalDiseases: item.total_diseases || 0 // Keep disease count for tooltip
         };
     });
     
@@ -1402,7 +1410,9 @@ function renderHighchartsMap(mapData) {
                         <div style="text-align: center; margin-bottom: 10px;">
                             <h6 style="margin: 0; color: #2c3e50; font-size: 14px;">${this.point.name}</h6>
                             <small style="color: #6c757d; font-size: 10px;">${item.region_name}</small>
-                            <div style="font-size: 9px; color: #6c757d; margin-top: 2px;">${this.point.value} diseases</div>
+                            <div style="font-size: 9px; color: #6c757d; margin-top: 2px;">
+                                ${this.point.totalDiseases} diseases • ${(this.point.value * 100).toFixed(1)}% avg probability
+                            </div>
                         </div>
                         <div style="max-height: 200px; overflow-y: auto;">
                             <table class="table table-sm" style="margin: 0; font-size: 11px;">
