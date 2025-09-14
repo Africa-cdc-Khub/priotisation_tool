@@ -883,6 +883,9 @@ $(document).ready(function() {
 
 <script>
 $(document).ready(function() {
+    // Ensure page starts at the top
+    window.scrollTo(0, 0);
+    
     // Region-Country chaining
     $('#region').on('change', function() {
         const regionId = $(this).val();
@@ -955,6 +958,9 @@ $(document).ready(function() {
         }
     });
 
+    // Ensure page is at top before initializing components
+    window.scrollTo(0, 0);
+    
     // Initialize components with proper delays
     let initTimeout1 = setTimeout(function() {
         testHighchartsMap(); // Test Highcharts availability first
@@ -1051,6 +1057,9 @@ function createOpenStreetMap() {
         console.error('Container or Leaflet not available');
         return;
     }
+    
+    // Ensure page stays at top during map initialization
+    window.scrollTo(0, 0);
     
     // Clear container
     container.innerHTML = '';
