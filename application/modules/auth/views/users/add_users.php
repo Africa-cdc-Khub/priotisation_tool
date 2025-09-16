@@ -216,6 +216,43 @@
   </div>
 </div>
 
+<style>
+/* Organization column styling */
+#usersTable td:nth-child(6) {
+  max-width: 300px !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  padding: 8px 4px;
+}
+
+/* Ensure table doesn't break layout */
+#usersTable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* DataTables specific styling */
+#usersTable.dataTable td {
+  vertical-align: top;
+}
+
+/* Make table responsive */
+@media (max-width: 768px) {
+  #usersTable td:nth-child(6) {
+    max-width: 200px !important;
+  }
+}
+
+/* Ensure proper text wrapping in all cells */
+#usersTable td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+</style>
+
 <script>
 // Ensure jQuery is loaded before running our script
 if (typeof jQuery === 'undefined') {
@@ -295,6 +332,8 @@ function initializeUsersTable() {
     var usersTable = $('#usersTable').DataTable({
       "processing": true,
       "serverSide": true,
+      "autoWidth": false,
+      "scrollX": true,
       "ajax": {
         "url": "<?= base_url('auth/getUsersData') ?>",
         "type": "POST",
@@ -304,14 +343,14 @@ function initializeUsersTable() {
         }
       },
       "columns": [
-        { "data": 0, "orderable": false, "searchable": false },
-        { "data": 1 },
-        { "data": 2 },
-        { "data": 3 },
-        { "data": 4 },
-        { "data": 5 },
-        { "data": 6 },
-        { "data": 7, "orderable": false, "searchable": false }
+        { "data": 0, "orderable": false, "searchable": false, "width": "50px" },
+        { "data": 1, "width": "150px" },
+        { "data": 2, "width": "200px" },
+        { "data": 3, "width": "150px" },
+        { "data": 4, "width": "100px" },
+        { "data": 5, "width": "300px" },
+        { "data": 6, "width": "120px" },
+        { "data": 7, "orderable": false, "searchable": false, "width": "200px" }
       ],
       "order": [[1, "asc"]],
       "pageLength": 10,
