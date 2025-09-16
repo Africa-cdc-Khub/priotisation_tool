@@ -80,26 +80,24 @@ class Auth_mdl extends CI_Model
 	public function updateUser($postdata)
 	{
 		$uid = $postdata['id'];
-	
 		$name = $postdata['name'];
 		$role = $postdata['role'];
 		$organization_name = $postdata['organization_name'];
 		$memberstate_id = $postdata['memberstate_id'];
 		$priotisation_level = $postdata['priotisation_level'];
-		$uid = $postdata['id'];
 		
-		$updated = $this->db->query("
-			UPDATE user 
-			SET 
-				name = " . $this->db->escape($name) . ",
-				role = " . $this->db->escape($role) . ",
-				organization_name = " . $this->db->escape($organization_name) . ",
-				memberstate_id = " . $this->db->escape($memberstate_id) . ",
-				priotisation_level = " . $this->db->escape($priotisation_level) . "
-			WHERE id = " . $this->db->escape($uid)
+		// Use CodeIgniter's update method for better security
+		$data = array(
+			'name' => $name,
+			'role' => $role,
+			'organization_name' => $organization_name,
+			'memberstate_id' => $memberstate_id,
+			'priotisation_level' => $priotisation_level
 		);
 		
-	
+		$this->db->where('id', $uid);
+		$updated = $this->db->update('user', $data);
+		
 		if ($updated) {
 			return [
 				'status' => 'success',
@@ -113,12 +111,28 @@ class Auth_mdl extends CI_Model
 		}
 	}
 	
+	// Reset password
+	public function resetPass($postdata)
+	{
+		$uid = $postdata['id'];
+		$newpass = $this->argonhash->make($postdata['password']);
+		
+		$data = array("password" => $newpass, "isChanged" => 0);
+		$this->db->where('id', $uid);
+		$query = $this->db->update($this->table, $data);
+
+		if ($query) {
+			return "Password Reset Successful";
+		} else {
+			return "Operation failed, try again";
+		}
+	}
 
 	// change password
 	public function updateProfile($postdata)
 	{
 		$uid = $postdata['id'];
-		$this->db->where('user_id', $uid);
+		$this->db->where('id', $uid);
 		$done = $this->db->update($this->table, $postdata);
 
 		if ($done) {
@@ -133,7 +147,7 @@ class Auth_mdl extends CI_Model
 	{
 		$uid = $postdata['user_id'];
 		$data = array("status" => 0);
-		$this->db->where('user_id', $uid);
+		$this->db->where('id', $uid);
 		$done = $this->db->update($this->table, $data);
 
 		if ($done) {
@@ -147,7 +161,7 @@ class Auth_mdl extends CI_Model
 	{
 		$uid = $postdata['user_id'];
 		$data = array("status" => 1);
-		$this->db->where('user_id', $uid);
+		$this->db->where('id', $uid);
 		$done = $this->db->update($this->table, $data);
 		if ($done) {
 			return "User has been Unblocked";

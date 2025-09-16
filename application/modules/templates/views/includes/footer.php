@@ -255,26 +255,30 @@ $('#disease_selector').select2({
     $(document).ready(function() {
 		var csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
 		var csrfHash = '<?= $this->security->get_csrf_hash(); ?>';
-        $("#data-table").DataTable({
-            "paging": true,
-            "pageLength": 20,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            dom: 'Bfrtip', // Enables buttons
-            buttons: [
-                {
-                    extend: 'csvHtml5',
-                    text: 'Export CSV',
-                    className: 'btn btn-primary'
-                },
-                {
-                    extend: 'excelHtml5',
-                    text: 'Export Excel',
-                    className: 'btn btn-success'
-                }
-            ]
-        });
+        
+        // Only initialize DataTable if the element exists
+        if ($("#data-table").length > 0) {
+            $("#data-table").DataTable({
+                "paging": true,
+                "pageLength": 20,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                dom: 'Bfrtip', // Enables buttons
+                buttons: [
+                    {
+                        extend: 'csvHtml5',
+                        text: 'Export CSV',
+                        className: 'btn btn-primary'
+                    },
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success'
+                    }
+                ]
+            });
+        }
     });
 
  $(document).on("click", ".verify-button", function() {

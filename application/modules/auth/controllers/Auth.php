@@ -221,29 +221,51 @@ class Auth extends MX_Controller
   
   public function updateUser()
   {
-      $postdata = $this->input->post();
+      // Check if this is an AJAX request
+      if ($this->input->is_ajax_request()) {
+          $postdata = $this->input->post();
+          
+          // Validate required fields
+          if (empty($postdata['id']) || empty($postdata['name']) || empty($postdata['email'])) {
+              echo json_encode([
+                  'status' => 'error',
+                  'message' => 'Required fields are missing.'
+              ]);
+              return;
+          }
+          
+          $result = $this->auth_mdl->updateUser($postdata);
+          
+          if ($result && $result['status'] === 'success') {
+              echo json_encode([
+                  'status' => 'success',
+                  'message' => 'User updated successfully.'
+              ]);
+          } else {
+              echo json_encode([
+                  'status' => 'error',
+                  'message' => $result['message'] ?? 'Update failed.'
+              ]);
+          }
+      } else {
+          // Handle non-AJAX requests (fallback)
+          $postdata = $this->input->post();
+          $result = $this->auth_mdl->updateUser($postdata);
 
-    // dd($postdata);
-  
-      $result = $this->auth_mdl->updateUser($postdata);
-
-      if ($result) {
-        $msg = array(
-          'msg' => 'Staff Updated successfully.',
-          'type' => 'success'
-        );
-        
-        
+          if ($result && $result['status'] === 'success') {
+              $msg = array(
+                  'msg' => 'User updated successfully.',
+                  'type' => 'success'
+              );
+          } else {
+              $msg = array(
+                  'msg' => $result['message'] ?? 'Update failed.',
+                  'type' => 'error'
+              );
+          }
+          Modules::run('utility/setFlash', $msg);
+          redirect('auth/users');
       }
-      else{
-        $msg = array(
-          'msg' => 'Updated Failed!.',
-          'type' => 'error'
-        );
-  
-      }
-      Modules::run('utility/setFlash', $msg);
-      redirect('auth/users');
   }
   
 
@@ -272,6 +294,86 @@ class Auth extends MX_Controller
     $res = $this->auth_mdl->unblockUser($postdata);
     echo $res;
   }
+  public function getUsersData()
+  {
+      // DataTables server-side processing
+      $draw = intval($this->input->post("draw"));
+      $start = intval($this->input->post("start"));
+      $length = intval($this->input->post("length"));
+      $search = $this->input->post("search")["value"];
+      $order = $this->input->post("order");
+      $columns = $this->input->post("columns");
+      
+      // Get total records count
+      $totalRecords = $this->auth_mdl->count_Users($search);
+      
+      // Get filtered records count
+      $totalFiltered = $this->auth_mdl->count_Users($search);
+      
+      // Get users data
+      $users = $this->auth_mdl->getAll($length, $start, $search);
+      
+      // Prepare data for DataTables
+      $data = array();
+      $no = $start + 1;
+      
+      foreach($users as $user) {
+          $nestedData = array();
+          $nestedData[] = $no++;
+          $nestedData[] = $user->name;
+          $nestedData[] = $user->email;
+          $nestedData[] = get_value($user->memberstate_id, 'member_states')->member_state ?? '-';
+          $nestedData[] = get_value($user->priotisation_level, 'priotisation_category')->name ?? '-';
+          $nestedData[] = $user->organization_name;
+          $nestedData[] = get_user_group($user->role)->group_name;
+          
+          // Action buttons
+          $actions = '<a class="btn btn-sm btn-info editBtn" 
+                        data-id="'.$user->id.'"
+                        data-name="'.htmlspecialchars($user->name, ENT_QUOTES).'"
+                        data-email="'.htmlspecialchars($user->email, ENT_QUOTES).'"
+                        data-role="'.$user->role.'"
+                        data-org="'.htmlspecialchars($user->organization_name, ENT_QUOTES).'"
+                        data-memberstate="'.$user->memberstate_id.'"
+                        data-level="'.$user->priotisation_level.'"
+                        data-toggle="modal" data-target="#editUserModal">
+                        Edit
+                      </a>';
+          
+          if ($user->status == 1) {
+              $actions .= ' <a href="#" class="btn btn-sm btn-warning blockBtn" 
+                                data-id="'.$user->id.'" 
+                                data-name="'.htmlspecialchars($user->name, ENT_QUOTES).'">
+                                Block
+                              </a>';
+          } else {
+              $actions .= ' <a href="#" class="btn btn-sm btn-danger unblockBtn" 
+                                data-id="'.$user->id.'" 
+                                data-name="'.htmlspecialchars($user->name, ENT_QUOTES).'">
+                                Activate
+                              </a>';
+          }
+          
+          $actions .= ' <a href="#" class="btn btn-sm btn-danger resetBtn" 
+                            data-id="'.$user->id.'" 
+                            data-name="'.htmlspecialchars($user->name, ENT_QUOTES).'">
+                            Reset
+                          </a>';
+          
+          $nestedData[] = $actions;
+          $data[] = $nestedData;
+      }
+      
+      $json_data = array(
+          "draw" => $draw,
+          "recordsTotal" => $totalRecords,
+          "recordsFiltered" => $totalFiltered,
+          "data" => $data
+      );
+      
+      echo json_encode($json_data);
+  }
+
   public function updateProfile()
   {
     $postdata = $this->input->post();
