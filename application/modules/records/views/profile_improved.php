@@ -224,12 +224,54 @@
             </h5>
         </div>
         <div class="card-body">
+            <!-- Filter by Thematic Area -->
+            <div class="mb-3">
+                <label class="form-label">Filter by Thematic Area:</label>
+                <select id="thematic-filter" class="form-control">
+                    <option value="">All Thematic Areas</option>
+                    <?php foreach ($thematic_areas as $area): ?>
+                        <option value="<?= $area->id ?>"><?= $area->name ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
             <div id="assigned-diseases-list">
                 <!-- Assigned diseases will be loaded here -->
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.thematic-group {
+    border-left: 3px solid #007bff;
+    padding-left: 15px;
+    margin-bottom: 20px;
+}
+
+.thematic-group h6 {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+.thematic-group .form-check {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    border: 1px solid #e9ecef;
+}
+
+.thematic-group .form-check:hover {
+    background: #e9ecef;
+}
+
+.thematic-group .form-check-label {
+    font-weight: 500;
+    color: #495057;
+}
+</style>
 
 <script>
 $(document).ready(function() {
@@ -272,10 +314,19 @@ $(document).ready(function() {
 
     // Notification function
     function showNotification(message, type) {
+        let icon = 'bx bx-check-circle';
+        if (type === 'error') {
+            icon = 'bx bx-error-circle';
+        } else if (type === 'warning') {
+            icon = 'bx bx-error';
+        } else if (type === 'info') {
+            icon = 'bx bx-info-circle';
+        }
+        
         Lobibox.notify(type, {
             pauseDelayOnHover: true,
             position: 'top right',
-            icon: 'bx bx-check-circle',
+            icon: icon,
             msg: message
         });
     }
@@ -337,7 +388,7 @@ $(document).ready(function() {
         );
     }
 
-    // Render assigned diseases
+    // Render assigned diseases grouped by thematic area
     function renderAssignedDiseases(diseases, showCheckboxes = true) {
         if (diseases.length === 0) {
             $('#assigned-diseases-list').html(`
@@ -348,12 +399,43 @@ $(document).ready(function() {
             return;
         }
 
-        $('#assigned-diseases-list').html(diseases.map(d => `
-            <div class="form-check mb-2">
-                ${showCheckboxes ? `<input type="checkbox" class="form-check-input assigned-disease-checkbox" id="assigned_disease_${d.id}" value="${d.id}">` : ''}
-                <label class="form-check-label" for="assigned_disease_${d.id}">${d.name}</label>
-            </div>
-        `).join(''));
+        // Group diseases by thematic area
+        const groupedDiseases = {};
+        diseases.forEach(disease => {
+            const thematicArea = disease.thematic_area || 'Uncategorized';
+            if (!groupedDiseases[thematicArea]) {
+                groupedDiseases[thematicArea] = [];
+            }
+            groupedDiseases[thematicArea].push(disease);
+        });
+
+        // Render grouped diseases
+        let html = '';
+        Object.keys(groupedDiseases).sort().forEach(thematicArea => {
+            html += `
+                <div class="thematic-group mb-4" data-thematic-area="${groupedDiseases[thematicArea][0].thematic_area_id || ''}">
+                    <h6 class="text-primary mb-3">
+                        <span class="au-icon au-icon-orange" style="width: 16px; height: 16px; font-size: 10px; margin-right: 8px;">
+                            <i class="fa fa-layer-group"></i>
+                        </span>
+                        ${thematicArea}
+                        <span class="badge badge-light ml-2">${groupedDiseases[thematicArea].length} disease(s)</span>
+                    </h6>
+                    <div class="row">
+                        ${groupedDiseases[thematicArea].map(d => `
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="form-check">
+                                    ${showCheckboxes ? `<input type="checkbox" class="form-check-input assigned-disease-checkbox" id="assigned_disease_${d.id}" value="${d.id}">` : ''}
+                                    <label class="form-check-label" for="assigned_disease_${d.id}">${d.name}</label>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        $('#assigned-diseases-list').html(html);
     }
 
     // Event handlers
@@ -391,6 +473,9 @@ $(document).ready(function() {
             return;
         }
 
+        // Show loading notification
+        showNotification(`Assigning ${selectedDiseases.length} disease(s)...`, 'info');
+
         let data = { 
             member_state_id: memberStateId, 
             diseases: selectedDiseases 
@@ -398,11 +483,15 @@ $(document).ready(function() {
 
         $.post('<?= base_url() ?>records/assign_diseases', data, function(response) {
             let res = JSON.parse(response);
-            showNotification(res.message, res.status ? 'success' : 'error');
             if (res.status) {
+                showNotification(`Successfully assigned ${selectedDiseases.length} disease(s)`, 'success');
                 loadAssignedDiseases();
                 $('.disease-checkbox:checked').prop('checked', false);
+            } else {
+                showNotification(res.message || 'Failed to assign diseases', 'error');
             }
+        }).fail(function() {
+            showNotification('Network error occurred while assigning diseases', 'error');
         });
     });
 
@@ -431,6 +520,9 @@ $(document).ready(function() {
             return;
         }
 
+        // Show loading notification
+        showNotification(`Removing ${selectedDiseases.length} disease(s)...`, 'info');
+
         let memberStateId = $('#member_state').val();
         let data = { 
             member_state_id: memberStateId, 
@@ -439,11 +531,29 @@ $(document).ready(function() {
 
         $.post('<?= base_url() ?>records/unassign_diseases', data, function(response) {
             let res = JSON.parse(response);
-            showNotification(res.message, res.status ? 'success' : 'error');
             if (res.status) {
+                showNotification(`Successfully removed ${selectedDiseases.length} disease(s)`, 'success');
                 loadAssignedDiseases();
+            } else {
+                showNotification(res.message || 'Failed to remove diseases', 'error');
             }
+        }).fail(function() {
+            showNotification('Network error occurred while removing diseases', 'error');
         });
+    });
+
+    // Thematic area filtering
+    $('#thematic-filter').change(function() {
+        const selectedThematicId = $(this).val();
+        
+        if (selectedThematicId === '') {
+            // Show all diseases
+            $('.thematic-group').show();
+        } else {
+            // Show only diseases from selected thematic area
+            $('.thematic-group').hide();
+            $(`.thematic-group[data-thematic-area="${selectedThematicId}"]`).show();
+        }
     });
 
     // Load assigned diseases on page load

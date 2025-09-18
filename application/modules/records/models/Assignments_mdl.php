@@ -28,10 +28,13 @@ class Assignments_mdl extends CI_Model
 
     public function get_assigned_diseases($member_state_id)
     {
-        $this->db->select('d.id, d.name');
+        $this->db->select('d.id, d.name, ta.id as thematic_area_id, ta.name as thematic_area');
         $this->db->from('member_state_diseases md');
         $this->db->join('diseases_and_conditions d', 'd.id = md.disease_id');
+        $this->db->join('disease_thematic_areas ta', 'ta.id = d.thematic_area_id', 'left');
         $this->db->where('md.member_state_id', $member_state_id);
+        $this->db->order_by('ta.name', 'ASC');
+        $this->db->order_by('d.name', 'ASC');
 
         return $this->db->get()->result();
     }
