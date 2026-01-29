@@ -595,7 +595,7 @@ function renderChartByProbability(filters) {
         const probPercent = parseFloat(item.probability) * 100;
         let color;
 
-        if (probPercent > 80) {
+        if (probPercent >= 80) {
           color = '#CE1126'; // High - Red
         } else if (probPercent >= 65) {
           color = '#FCD116'; // Medium - Yellow
@@ -667,7 +667,7 @@ function renderDiseaseProbabilityGauge(diseaseId = null) {
       const probPercent = probValue * 100;
 
       let color = '#007749'; // Default: low
-      if (probPercent > 80) {
+      if (probPercent >= 80) {
         color = '#CE1126'; // High
       } else if (probPercent >= 65) {
         color = '#FCD116'; // Medium
