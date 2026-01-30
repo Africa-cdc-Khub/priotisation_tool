@@ -104,6 +104,7 @@
 <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.colVis.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
 <script type="text/javascript"
 	src="https://cdn.datatables.net/v/dt/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.js"></script>
@@ -846,39 +847,57 @@ $(document).ready(function () {
 
 <script>
 $(document).ready(function() {
-    // For non-admin users, ensure region is selected and trigger change
-    
+    // Region-Country chaining for non-dashboard pages (e.g. records/profile)
+    // Skip on dashboard home so only one handler runs there
+    if ($('#ranking-datatable').length > 0 || $('#africa-map').length > 0) {
+        return;
+    }
+    var countriesXhr = null;
+    var countriesErrorTimeout = null;
+    var $countrySelect = $('#member_state');
     $('#region').on('change', function() {
-        const regionId = $(this).val();
-
-        // Only proceed if a region is selected
-        if (regionId) {
-            $.ajax({
-                url: 'http://localhost/priotisation_tool/records/get_countries_by_region',
-                type: 'POST',
-                data: { region_id: regionId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        const countries = response.countries;
-                        let options = '<option value="">-- Select Country --</option>';
-                        countries.forEach(function(country) {
-                            // For non-admin users, pre-select their country
-                            let selected = '';
-                            options += '<option value="' + country.id + '" ' + selected + '>' + country.member_state + '</option>';
-                        });
-                        $('#member_state').html(options);
-                    } else {
-                        $('#member_state').html('<option value="">No countries found</option>');
-                    }
-                },
-                error: function() {
-                    $('#member_state').html('<option value="">Error loading countries</option>');
-                }
-            });
-        } else {
-            $('#member_state').html('<option value="">-- Select Country --</option>');
+        var regionId = $(this).val();
+        if (countriesXhr) { countriesXhr.abort(); countriesXhr = null; }
+        if (countriesErrorTimeout) { clearTimeout(countriesErrorTimeout); countriesErrorTimeout = null; }
+        if (!regionId) {
+            $countrySelect.html('<option value="">-- Select Country --</option>').prop('disabled', false);
+            return;
         }
+        $countrySelect.prop('disabled', true).html('<option value="">Loading countries...</option>');
+        countriesXhr = $.ajax({
+            url: '<?= site_url("records/get_countries_by_region") ?>',
+            type: 'POST',
+            data: { region_id: regionId },
+            dataType: 'json',
+            timeout: 15000,
+            success: function(response) {
+                if (countriesErrorTimeout) { clearTimeout(countriesErrorTimeout); countriesErrorTimeout = null; }
+                var currentRegion = $('#region').val();
+                if (currentRegion !== regionId) return;
+                if (response.status === 'success' && response.countries) {
+                    var options = '<option value="">-- Select Country --</option>';
+                    response.countries.forEach(function(country) {
+                        options += '<option value="' + country.id + '">' + country.member_state + '</option>';
+                    });
+                    $countrySelect.html(options).prop('disabled', false);
+                } else {
+                    $countrySelect.html('<option value="">No countries found</option>').prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                if (status === 'abort') return;
+                var currentRegion = $('#region').val();
+                if (currentRegion !== regionId) return;
+                countriesErrorTimeout = setTimeout(function() {
+                    countriesErrorTimeout = null;
+                    if ($('#region').val() !== regionId) return;
+                    var $sel = $('#member_state');
+                    if ($sel.find('option').length === 1 && $sel.find('option').text().indexOf('Loading') !== -1) {
+                        $sel.html('<option value="">Error loading countries</option>').prop('disabled', false);
+                    }
+                }, 500);
+            }
+        });
     });
 });
 </script>
@@ -890,43 +909,67 @@ $(document).ready(function() {
     // Ensure page starts at the top
     window.scrollTo(0, 0);
     
-    // Region-Country chaining
+    // Region-Country chaining for dashboard home: single request, loading state, no stale updates
+    var dashboardCountriesXhr = null;
+    var dashboardErrorTimeout = null;
     $('#region').on('change', function() {
-        const regionId = $(this).val();
-        
-        if (regionId) {
-            $.ajax({
-                url: '<?= site_url("records/get_countries_by_region") ?>',
-                type: 'POST',
-                data: { region_id: regionId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        const countries = response.countries;
-                        let options = '<option value="">All Countries</option>';
-                        countries.forEach(function(country) {
-                            options += '<option value="' + country.id + '">' + country.member_state + '</option>';
-                        });
-                        $('#member_state').html(options);
-                        
-                        // Load data after region change
-                        loadMapData();
-                        refreshDataTable();
-                    } else {
-                        $('#member_state').html('<option value="">No countries found</option>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX error:', error);
-                    $('#member_state').html('<option value="">Error loading countries</option>');
-                }
-            });
-        } else {
-            // Reset to default options and load all data
-            $('#member_state').html('<option value="">All Countries</option>');
-            loadMapData();
-            refreshDataTable();
+        var regionId = $(this).val();
+        var $countrySelect = $('#member_state');
+        if (dashboardCountriesXhr) {
+            dashboardCountriesXhr.abort();
+            dashboardCountriesXhr = null;
         }
+        if (dashboardErrorTimeout) {
+            clearTimeout(dashboardErrorTimeout);
+            dashboardErrorTimeout = null;
+        }
+        if (!regionId) {
+            $countrySelect.html('<option value="">All Countries</option>').prop('disabled', false);
+            if (typeof loadMapData === 'function') loadMapData();
+            if (typeof refreshDataTable === 'function') refreshDataTable();
+            return;
+        }
+        $countrySelect.prop('disabled', true).html('<option value="">Loading countries...</option>');
+        dashboardCountriesXhr = $.ajax({
+            url: '<?= site_url("records/get_countries_by_region") ?>',
+            type: 'POST',
+            data: { region_id: regionId },
+            dataType: 'json',
+            timeout: 15000,
+            success: function(response) {
+                if (dashboardErrorTimeout) {
+                    clearTimeout(dashboardErrorTimeout);
+                    dashboardErrorTimeout = null;
+                }
+                var currentRegion = $('#region').val();
+                if (currentRegion !== regionId) return;
+                if (response.status === 'success' && response.countries) {
+                    var options = '<option value="">All Countries</option>';
+                    response.countries.forEach(function(country) {
+                        options += '<option value="' + country.id + '">' + country.member_state + '</option>';
+                    });
+                    $countrySelect.html(options).prop('disabled', false);
+                    if (typeof loadMapData === 'function') loadMapData();
+                    if (typeof refreshDataTable === 'function') refreshDataTable();
+                } else {
+                    $countrySelect.html('<option value="">No countries found</option>').prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                if (status === 'abort') return;
+                var currentRegion = $('#region').val();
+                if (currentRegion !== regionId) return;
+                // Only show error after a short delay; if success runs in the meantime it will clear this and we avoid flicker
+                dashboardErrorTimeout = setTimeout(function() {
+                    dashboardErrorTimeout = null;
+                    if ($('#region').val() !== regionId) return;
+                    var $sel = $('#member_state');
+                    if ($sel.find('option').length === 1 && $sel.find('option').text().indexOf('Loading') !== -1) {
+                        $sel.html('<option value="">Error loading countries</option>').prop('disabled', false);
+                    }
+                }, 500);
+            }
+        });
     });
     
     // Member state change handler
@@ -1504,61 +1547,148 @@ function initializeDataTable() {
             }
         });
         
-        // Check if DataTables buttons are available
+        // Export helpers: fetch ALL filtered data (all pages) then export
+        var RANKING_EXPORT_HEADERS = ['Period', 'Priority Level', 'Region', 'Country', 'Disease Name', 'Thematic Area', 'Prevention', 'Detection', 'Morbidity', 'Case Management', 'Mortality', 'Composite Index', 'Probability', 'Priority Level', 'Status', 'Created', 'Updated'];
+        function stripHtml(s) {
+            if (s == null || s === '') return '';
+            var d = document.createElement('div');
+            d.innerHTML = s;
+            return (d.textContent || d.innerText || '').trim();
+        }
+        function rowForExport(row) {
+            return row.map(function(cell, i) { return i === 14 ? stripHtml(cell) : (cell != null ? String(cell) : ''); });
+        }
+        function fetchAllRankingData(dt, callback) {
+            var info = dt.page.info();
+            var total = info.recordsDisplay;
+            if (total === 0) {
+                if (typeof Lobibox !== 'undefined') Lobibox.alert('warning', { msg: 'No data to export.' }); else alert('No data to export.');
+                return;
+            }
+            var order = dt.order();
+            var payload = {
+                draw: 0,
+                start: 0,
+                length: total,
+                search: { value: dt.search(), regex: false },
+                order: order.length ? [{ column: order[0][0], dir: order[0][1] }] : [{ column: 13, dir: 'desc' }],
+                member_state_id: $('#member_state').val() || '',
+                period: $('#period').val() || '',
+                thematic_area_id: $('#thematic_area').val() || '',
+                prioritisation_category_id: $('#prioritisation_category').val() || '',
+                region_id: $('#region').val() || ''
+            };
+            $.ajax({
+                url: '<?= site_url("records/get_ranking_data") ?>',
+                type: 'POST',
+                data: payload,
+                dataType: 'json'
+            }).done(function(res) {
+                if (res && res.data) callback(res.data); else { if (typeof Lobibox !== 'undefined') Lobibox.alert('error', { msg: 'No data returned.' }); else alert('No data returned.'); }
+            }).fail(function() {
+                if (typeof Lobibox !== 'undefined') Lobibox.alert('error', { msg: 'Export failed. Please try again.' }); else alert('Export failed.');
+            });
+        }
+        function triggerDownload(content, filename, mimeType) {
+            var blob = new Blob([content], { type: mimeType || 'application/octet-stream' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        var exportBaseName = 'disease_ranking_data_' + new Date().toISOString().split('T')[0];
+        
         var availableButtons = [];
-        
-        // Check for Excel button
-        if (typeof $.fn.DataTable.ext.buttons.excelHtml5 !== 'undefined') {
-            availableButtons.push({
-                extend: 'excelHtml5',
-                text: '<i class="fa fa-file-excel"></i> Excel',
-                className: 'btn btn-success btn-sm',
-                title: 'Disease Ranking Data',
-                filename: 'disease_ranking_data_' + new Date().toISOString().split('T')[0]
-            });
+        // Excel (all data) – uses SheetJS
+        availableButtons.push({
+            text: '<i class="fa fa-file-excel"></i> Excel',
+            className: 'btn btn-success btn-sm',
+            action: function(e, dt, node, config) {
+                node.prop('disabled', true);
+                fetchAllRankingData(dt, function(data) {
+                    try {
+                        if (typeof XLSX === 'undefined') { triggerDownload(buildCsvFromData(data), exportBaseName + '.csv', 'text/csv;charset=utf-8'); }
+                        else {
+                            var rows = [RANKING_EXPORT_HEADERS].concat(data.map(rowForExport));
+                            var wb = XLSX.utils.book_new();
+                            var ws = XLSX.utils.aoa_to_sheet(rows);
+                            XLSX.utils.book_append_sheet(wb, ws, 'Data');
+                            XLSX.writeFile(wb, exportBaseName + '.xlsx');
+                        }
+                    } catch (err) { console.error(err); if (typeof Lobibox !== 'undefined') Lobibox.alert('error', { msg: 'Excel export failed.' }); }
+                    node.prop('disabled', false);
+                });
+            }
+        });
+        // CSV (all data)
+        availableButtons.push({
+            text: '<i class="fa fa-file-csv"></i> CSV',
+            className: 'btn btn-info btn-sm',
+            action: function(e, dt, node, config) {
+                node.prop('disabled', true);
+                fetchAllRankingData(dt, function(data) {
+                    triggerDownload(buildCsvFromData(data), exportBaseName + '.csv', 'text/csv;charset=utf-8');
+                    node.prop('disabled', false);
+                });
+            }
+        });
+        function buildCsvFromData(data) {
+            var BOM = '\uFEFF';
+            var rows = [RANKING_EXPORT_HEADERS].concat(data.map(rowForExport));
+            return BOM + rows.map(function(row) {
+                return row.map(function(cell) {
+                    var s = String(cell == null ? '' : cell);
+                    if (/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+                    return s;
+                }).join(',');
+            }).join('\r\n');
         }
-        
-        // Check for CSV button
-        if (typeof $.fn.DataTable.ext.buttons.csvHtml5 !== 'undefined') {
+        // PDF (all data) – uses pdfmake
+        if (typeof pdfMake !== 'undefined') {
             availableButtons.push({
-                extend: 'csvHtml5',
-                text: '<i class="fa fa-file-csv"></i> CSV',
-                className: 'btn btn-info btn-sm',
-                title: 'Disease Ranking Data',
-                filename: 'disease_ranking_data_' + new Date().toISOString().split('T')[0]
-            });
-        }
-        
-        // Check for PDF button
-        if (typeof $.fn.DataTable.ext.buttons.pdfHtml5 !== 'undefined') {
-            availableButtons.push({
-                extend: 'pdfHtml5',
                 text: '<i class="fa fa-file-pdf"></i> PDF',
                 className: 'btn btn-danger btn-sm',
-                title: 'Disease Ranking Data',
-                filename: 'disease_ranking_data_' + new Date().toISOString().split('T')[0],
-                orientation: 'landscape',
-                pageSize: 'A4'
+                action: function(e, dt, node, config) {
+                    node.prop('disabled', true);
+                    fetchAllRankingData(dt, function(data) {
+                        try {
+                            var body = [RANKING_EXPORT_HEADERS].concat(data.map(function(row) { return rowForExport(row); }));
+                            var doc = {
+                                pageOrientation: 'landscape',
+                                content: [{ table: { headerRows: 1, body: body }, layout: 'lightHorizontalLines' }],
+                                defaultStyle: { fontSize: 8 }
+                            };
+                            pdfMake.createPdf(doc).download(exportBaseName + '.pdf');
+                        } catch (err) { console.error(err); if (typeof Lobibox !== 'undefined') Lobibox.alert('error', { msg: 'PDF export failed.' }); }
+                        node.prop('disabled', false);
+                    });
+                }
             });
         }
-        
-        // Check for Print button
-        if (typeof $.fn.DataTable.ext.buttons.print !== 'undefined') {
-            availableButtons.push({
-                extend: 'print',
-                text: '<i class="fa fa-print"></i> Print',
-                className: 'btn btn-secondary btn-sm',
-                title: 'Disease Ranking Data'
-            });
-        }
-        
-        console.log('Available buttons:', availableButtons.length);
-        console.log('Button types available:', {
-            excel: typeof $.fn.DataTable.ext.buttons.excelHtml5,
-            csv: typeof $.fn.DataTable.ext.buttons.csvHtml5,
-            pdf: typeof $.fn.DataTable.ext.buttons.pdfHtml5,
-            print: typeof $.fn.DataTable.ext.buttons.print
+        // Print (all data)
+        availableButtons.push({
+            text: '<i class="fa fa-print"></i> Print',
+            className: 'btn btn-secondary btn-sm',
+            action: function(e, dt, node, config) {
+                node.prop('disabled', true);
+                fetchAllRankingData(dt, function(data) {
+                    var rows = data.map(function(row) {
+                        return '<tr>' + rowForExport(row).map(function(cell) { var t = cell == null ? '' : String(cell); return '<td>' + t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') + '</td>'; }).join('') + '</tr>';
+                    }).join('');
+                    var headers = '<tr>' + RANKING_EXPORT_HEADERS.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr>';
+                    var html = '<!DOCTYPE html><html><head><title>Disease Ranking Data</title><style>table{border-collapse:collapse;width:100%;}th,td{border:1px solid #000;padding:4px;text-align:left;font-size:12px;}th{background:#333;color:#fff;}</style></head><body><h1>Disease Ranking Data</h1><p>Exported: ' + new Date().toLocaleString() + '</p><table><thead>' + headers + '</thead><tbody>' + rows + '</tbody></table></body></html>';
+                    var w = window.open('', '_blank');
+                    w.document.write(html);
+                    w.document.close();
+                    w.onload = function() { w.print(); w.close(); };
+                    node.prop('disabled', false);
+                });
+            }
         });
+        
+        console.log('Export buttons (all data):', availableButtons.length);
         
         // DataTable configuration
         var dataTableConfig = {
