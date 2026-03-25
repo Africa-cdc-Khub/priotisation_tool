@@ -598,7 +598,7 @@ function renderChartByProbability(filters) {
     .then(res => res.json())
     .then(data => {
       let seriesData = (data || []).map(item => {
-        const probPercent = parseFloat(item.probability) * 100;
+        const probPercent = (parseFloat(item.probability) || 0) * 100;
         let color;
 
         if (probPercent >= 80) {
@@ -618,7 +618,7 @@ function renderChartByProbability(filters) {
       Highcharts.chart('priority-probability-chart', {
         chart: { type: 'bar', backgroundColor: '#fff' },
         title: { text: 'Priority Diseases & Conditions Ranked by Probabilities' },
-        xAxis: { type: 'category', title: null },
+        xAxis: { type: 'category', title: null, reversed: true },
         yAxis: {
           max: 100,
           title: { text: 'Probability (%)' },
