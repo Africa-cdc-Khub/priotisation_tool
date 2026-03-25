@@ -12,7 +12,7 @@
             <strong>Priority Key:</strong>
             <div class="d-flex justify-content-around align-items-center mt-2">
               <span style="color: #28a745;">&#9632; Low</span>
-              <span style="color: #ffc107;">&#9632; Medium</span>
+              <span style="color: #E79536;">&#9632; Medium</span>
               <span style="color: #dc3545;">&#9632; High</span>
             </div>
           </div>

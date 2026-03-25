@@ -599,7 +599,7 @@ function renderChartByProbability(filters) {
         if (probPercent >= 80) {
           color = '#CE1126'; // High - Red
         } else if (probPercent >= 65) {
-          color = '#ffc107'; // Medium - Yellow
+          color = '#E79536'; // Medium - Yellow
         } else {
           color = '#007749'; // Low - Green
         }
@@ -671,7 +671,7 @@ function renderDiseaseProbabilityGauge(diseaseId = null) {
       if (probPercent >= 80) {
         color = '#CE1126'; // High
       } else if (probPercent >= 65) {
-        color = '#ffc107'; // Medium
+        color = '#E79536'; // Medium
       }
 
       Highcharts.chart('disease-probability-gauge', {
@@ -1138,7 +1138,7 @@ function createHighchartsMap() {
             max: 1,
             stops: [
                 [0, '#28a745'], // Green for low probability (0-0.33)
-                [0.33, '#ffc107'], // Yellow for medium probability (0.33-0.66)
+                [0.33, '#E79536'], // Yellow for medium probability (0.33-0.66)
                 [0.66, '#dc3545'] // Red for high probability (0.66-1.0)
             ],
             minColor: '#d2b48c', // Light brown for countries without data
@@ -1337,7 +1337,7 @@ function renderOpenStreetMap(mapData) {
                 color = '#dc3545'; // Red for high count
                 opacity = 0.7;
             } else if (diseaseCount >= 4) {
-                color = '#ffc107'; // Yellow for medium count
+                color = '#E79536'; // Yellow for medium count
                 opacity = 0.5;
             }
             

@@ -329,7 +329,7 @@ function renderChartByProbability(filters) {
         if (probPercent > 80) {
           color = '#CE1126'; // High - Red
         } else if (probPercent >= 65) {
-          color = '#ffc107'; // Medium - Yellow
+          color = '#E79536'; // Medium - Yellow
         } else {
           color = '#007749'; // Low - Green
         }
@@ -401,7 +401,7 @@ function renderDiseaseProbabilityGauge(diseaseId = null) {
       if (probPercent > 80) {
         color = '#CE1126'; // High
       } else if (probPercent >= 65) {
-        color = '#ffc107'; // Medium
+        color = '#E79536'; // Medium
       }
 
       Highcharts.chart('disease-probability-gauge', {
