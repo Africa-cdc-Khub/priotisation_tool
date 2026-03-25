@@ -292,8 +292,13 @@ function renderChartByThematicArea(filters) {
   })
     .then(res => res.json())
     .then(data => {
-      const categories = data.map(item => item.thematic_area);
-      const counts = data.map(item => parseInt(item.total));
+      // Sort descending so highest values appear first (top of bar chart)
+      const sorted = (data || [])
+        .map(item => ({ thematic_area: item.thematic_area, total: parseInt(item.total) || 0 }))
+        .sort((a, b) => b.total - a.total);
+
+      const categories = sorted.map(item => item.thematic_area);
+      const counts = sorted.map(item => item.total);
       const colors = ['#B3B3B3'];
       const seriesData = counts.map((count, i) => ({ y: count, color: colors[i % colors.length] }));
 
@@ -322,7 +327,7 @@ function renderChartByProbability(filters) {
   })
     .then(res => res.json())
     .then(data => {
-      const seriesData = data.map(item => {
+      let seriesData = (data || []).map(item => {
         const probPercent = parseFloat(item.probability) * 100;
         let color;
 
@@ -336,6 +341,9 @@ function renderChartByProbability(filters) {
 
         return { name: item.disease_name, y: probPercent, color };
       });
+
+      // Sort descending so highest probabilities appear first (top of bar chart)
+      seriesData.sort((a, b) => (b.y || 0) - (a.y || 0));
 
       Highcharts.chart('priority-probability-chart', {
         chart: { type: 'bar', backgroundColor: '#fff' },
@@ -362,8 +370,13 @@ function renderContinentalChart() {
   fetch('<?= base_url('records/get_continental_disease_chart_data') ?>')
     .then(res => res.json())
     .then(data => {
-      const categories = data.map(item => item.thematic_area);
-      const counts = data.map(item => parseInt(item.total));
+      // Sort descending so highest values appear first (top of bar chart)
+      const sorted = (data || [])
+        .map(item => ({ thematic_area: item.thematic_area, total: parseInt(item.total) || 0 }))
+        .sort((a, b) => b.total - a.total);
+
+      const categories = sorted.map(item => item.thematic_area);
+      const counts = sorted.map(item => item.total);
       const colors = ['#B3B3B3'];
       const seriesData = counts.map((count, i) => ({ y: count, color: colors[i % colors.length] }));
 
