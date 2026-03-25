@@ -10,17 +10,17 @@
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/lobibox@1.2.7/dist/js/lobibox.min.js"></script>
 
-	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts.js"></script>
 
-	<script src="https://code.highcharts.com/modules/exporting.js"></script>
-	<script src="https://code.highcharts.com/modules/export-data.js"></script>
-	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
-	<script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
-	<script src="https://code.highcharts.com/modules/data.js"></script>
-	<script src="https://code.highcharts.com/modules/drilldown.js"></script>
-	<script src="https://code.highcharts.com/modules/boost.js"></script>
-	<script src="https://code.highcharts.com/highcharts-more.js"></script>
-	<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/exporting.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/export-data.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/accessibility.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/offline-exporting.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/data.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/drilldown.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/boost.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts-more.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/solid-gauge.js"></script>
 
 	
 	<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -599,7 +599,7 @@ function renderChartByProbability(filters) {
         if (probPercent >= 80) {
           color = '#CE1126'; // High - Red
         } else if (probPercent >= 65) {
-          color = '#FCD116'; // Medium - Yellow
+          color = '#ffc107'; // Medium - Yellow
         } else {
           color = '#007749'; // Low - Green
         }
@@ -671,7 +671,7 @@ function renderDiseaseProbabilityGauge(diseaseId = null) {
       if (probPercent >= 80) {
         color = '#CE1126'; // High
       } else if (probPercent >= 65) {
-        color = '#FCD116'; // Medium
+        color = '#ffc107'; // Medium
       }
 
       Highcharts.chart('disease-probability-gauge', {
@@ -1084,7 +1084,7 @@ function initializeHighchartsMap() {
     // Check if map module is loaded
     if (typeof Highcharts.mapChart === 'undefined') {
         console.log('Highcharts map module not loaded, loading...');
-        $.getScript('https://code.highcharts.com/maps/modules/map.js', function() {
+        $.getScript('https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/map.js', function() {
             console.log('Highcharts map module loaded');
             createHighchartsMap();
         }).fail(function() {
@@ -1833,7 +1833,7 @@ function renderAfricaMap(mapData) {
         console.error('Highcharts mapChart not available, trying to load it...');
         
         // Try to load the map module dynamically
-        $.getScript('https://code.highcharts.com/modules/map.js', function() {
+        $.getScript('https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/map.js', function() {
             console.log('Map module loaded dynamically, retrying map render...');
             // Retry rendering after a short delay
             setTimeout(function() {

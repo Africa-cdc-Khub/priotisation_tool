@@ -32,21 +32,21 @@
     <script src="https://cdn.jsdelivr.net/npm/lobibox@1.2.7/dist/js/lobibox.min.js"></script>
     <script src="<?php echo base_url() ?>assets/plugins/jquery/jquery.min.js"></script>
     <!-- Highcharts Core -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts.js"></script>
 
     <!-- Bar/Column chart support -->
-    <script src="https://code.highcharts.com/modules/bar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/bar.js"></script>
 
     <!-- Optional Modules -->
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="https://code.highcharts.com/modules/export-data.js"></script>
-    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-    <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
-    <script src="https://code.highcharts.com/modules/data.js"></script>
-    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
-    <script src="https://code.highcharts.com/modules/boost.js"></script>
-    <script src="https://code.highcharts.com/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/exporting.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/export-data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/accessibility.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/offline-exporting.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/drilldown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/boost.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts-more.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/solid-gauge.js"></script>
 
     <!-- Notify.js -->
 
