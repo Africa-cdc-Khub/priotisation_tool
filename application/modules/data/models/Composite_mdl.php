@@ -52,9 +52,9 @@ class Composite_mdl extends CI_Model
 				}
 		
 				// 3. Calculate temp_priority_level
-				if ($temp_probability > 0.87) {
+				if ($temp_probability >=0.8) {
 					$temp_priority_level = 'High';
-				} elseif ($temp_probability >= 0.7) {
+				} elseif ($temp_probability >= 0.65 && $temp_probability < 0.8) {
 					$temp_priority_level = 'Medium';
 				} else {
 					$temp_priority_level = 'Low';
@@ -79,9 +79,9 @@ class Composite_mdl extends CI_Model
 				}
 		
 				// 6. Calculate final level from final probability
-				if ($probability > 0.87) {
+				if ($probability >= 0.8) {
 					$level = 'High';
-				} elseif ($probability >= 0.7) {
+				} elseif ($probability >= 0.65 && $probability < 0.8) {
 					$level = 'Medium';
 				} else {
 					$level = 'Low';
@@ -140,7 +140,11 @@ class Composite_mdl extends CI_Model
 			);
 		}
 	
-		private function isDetect($header, $value) { return (isset($this->parameters[$header]) && abs($value - $this->parameters[$header]) < 0.001); }
+		private function isDetect($header, $value) 
+		{
+			 return (isset($this->parameters[$header]) && abs($value - $this->parameters[$header]) < 0.001);
+		
+		}
 		private function isPrev($header, $value) { return (isset($this->parameters[$header]) && abs($value - $this->parameters[$header]) < 0.001); }
 		private function isMorbid($header, $value) { return (isset($this->parameters[$header]) && abs($value - $this->parameters[$header]) < 0.001); }
 		private function isCase($header, $value) { return (isset($this->parameters[$header]) && abs($value - $this->parameters[$header]) < 0.001); }
