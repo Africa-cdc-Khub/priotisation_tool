@@ -136,22 +136,16 @@ class Composite_mdl extends CI_Model
 		if ($onlyMissing) {
 			$this->db->where('temp_composite_index IS NULL', null, false);
 		}
-		$data = $this->db->get('member_state_diseases_data')->result();
+		$rows = $this->db->select('id')->get('member_state_diseases_data')->result();
+		$updated = 0;
 
-		foreach ($data as $row) {
-			$metrics = $this->calculateMetrics(
-				$row->detect,
-				$row->prev,
-				$row->morbid,
-				$row->case,
-				$row->mort
-			);
-			$metrics['updated_at'] = date('Y-m-d H:i:s');
-			$this->db->where('id', $row->id);
-			$this->db->update('member_state_diseases_data', $metrics);
+		foreach ($rows as $row) {
+			if ($this->updateRecordById($row->id)) {
+				$updated++;
+			}
 		}
 
-		return count($data);
+		return $updated;
 	}
 
 	private function matchScenario1($detect, $prev, $morbid, $case, $mort)

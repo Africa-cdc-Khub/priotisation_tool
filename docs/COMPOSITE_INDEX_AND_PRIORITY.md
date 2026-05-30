@@ -114,9 +114,9 @@ Triggered when criteria align with “level 3” style patterns (e.g. Detect3, P
 
 | Action | Behaviour |
 |--------|-----------|
-| Save one criterion via ranking form | `Records_model::save_ranking_data()` → `Composite_mdl::updateRecordById()` |
-| Batch correction | `GET/POST` `records/data_correction` or `data/correct_composite_index` → all rows |
-| Read dashboard table | `Records::get_ranking_data()` displays priority via `priorityFromProbability()` so labels match probability even before batch fix |
+| Save one criterion via ranking form | `Records_model::save_ranking_data()` → `recalculateRecordMetrics()` → `Composite_mdl::updateRecordById()` |
+| Batch correction (all existing rows) | `Records_model::recalculate_all_ranking_metrics()` via `records/data_correction` or `data/correct_composite_index` |
+| Read dashboard table | `Records::get_ranking_data()` displays priority via `priorityFromProbability()` so labels match probability |
 
 Previously, composite recalculation after save was **disabled** (`//correct_composite_index_async()`), and batch correction only updated rows with `temp_composite_index IS NULL`. That caused **stale `priority_level`** (e.g. old 87% High threshold) while **probability** was updated elsewhere—charts then showed “High” colours for 83% because charts use probability, not the stale column.
 

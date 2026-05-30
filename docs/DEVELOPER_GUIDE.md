@@ -74,20 +74,43 @@ Chart colour thresholds must stay aligned with `Composite_mdl::priorityFromProba
 
 ## 7. Composite index maintenance
 
-| Endpoint | Controller | Effect |
-|----------|------------|--------|
-| `records/data_correction` | `Records::data_correction()` | JSON; recalculates **all** rows |
-| `data/correct_composite_index` | `Data::correct_composite_index()` | Plain text; same batch job |
+### Per-row (same as after `save_ranking_data()`)
 
 ```php
-$this->composite_mdl->correct_composite_index(false); // all rows
-$this->composite_mdl->correct_composite_index(true);  // legacy: only NULL temp_composite_index
+$this->records_model->recalculateRecordMetrics($recordId);
+// internally: Composite_mdl::updateRecordById($recordId)
 ```
 
-Single-row update:
+### Batch — all existing saved data
 
 ```php
-$this->composite_mdl->updateRecordById($recordId);
+$result = $this->records_model->recalculate_all_ranking_metrics();
+// optional filters: member_state_id, period, prioritisation_category, region_id
+// returns: ['total' => n, 'updated' => n, 'failed' => n]
+```
+
+| Endpoint | Controller | Effect |
+|----------|------------|--------|
+| `records/data_correction` | `Records::data_correction()` | JSON; runs `recalculate_all_ranking_metrics()` (optional POST filters) |
+| `data/correct_composite_index` | `Data::correct_composite_index()` | Plain text; same batch via `Records_model` |
+
+Example (all rows):
+
+```
+GET http://localhost/priotisation_tool/records/data_correction
+```
+
+Example (one country / year):
+
+```
+POST records/data_correction
+member_state_id=5&period=2025
+```
+
+Low-level batch (Composite_mdl only, no region_id sync):
+
+```php
+$this->composite_mdl->correct_composite_index(false);
 ```
 
 See [COMPOSITE_INDEX_AND_PRIORITY.md](COMPOSITE_INDEX_AND_PRIORITY.md) for formulas and scenarios.

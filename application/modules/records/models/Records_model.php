@@ -88,11 +88,72 @@ class Records_model extends CI_Model
     }
 
     if (!empty($recordId)) {
-        $this->composite_mdl->updateRecordById($recordId);
+        $this->recalculateRecordMetrics($recordId);
     }
 
     return true;
 }
+
+	/**
+	 * Same composite/probability/priority update as after save_ranking_data().
+	 */
+	public function recalculateRecordMetrics($recordId)
+	{
+		if (empty($recordId)) {
+			return false;
+		}
+		return $this->composite_mdl->updateRecordById($recordId);
+	}
+
+	/**
+	 * Recalculate derived fields for all existing ranking rows (batch data correction).
+	 * Mirrors the post-save step in save_ranking_data() for every stored record.
+	 *
+	 * @param array $filters Optional: member_state_id, period, prioritisation_category, region_id
+	 * @return array{total:int, updated:int, failed:int}
+	 */
+	public function recalculate_all_ranking_metrics(array $filters = [])
+	{
+		$this->db->select('id, member_state_id');
+		$this->db->from('member_state_diseases_data');
+
+		if (!empty($filters['member_state_id'])) {
+			$this->db->where('member_state_id', (int) $filters['member_state_id']);
+		}
+		if (!empty($filters['period'])) {
+			$this->db->where('period', $filters['period']);
+		}
+		if (!empty($filters['prioritisation_category'])) {
+			$this->db->where('prioritisation_category', (int) $filters['prioritisation_category']);
+		}
+		if (!empty($filters['region_id'])) {
+			$this->db->where('region_id', (int) $filters['region_id']);
+		}
+
+		$rows = $this->db->get()->result_array();
+		$updated = 0;
+		$failed = 0;
+
+		foreach ($rows as $row) {
+			$regionId = $this->lists_mdl->get_region_by_memberstates($row['member_state_id']);
+			if ($regionId) {
+				$this->db->where('id', $row['id']);
+				$this->db->update('member_state_diseases_data', ['region_id' => $regionId]);
+			}
+
+			if ($this->recalculateRecordMetrics($row['id'])) {
+				$updated++;
+			} else {
+				$failed++;
+			}
+		}
+
+		return [
+			'total' => count($rows),
+			'updated' => $updated,
+			'failed' => $failed,
+		];
+	}
 
 
 

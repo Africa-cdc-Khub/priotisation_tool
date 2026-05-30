@@ -548,16 +548,31 @@ class Records extends CI_Controller
 	}
 
 	/**
-	 * Recalculate composite index, probability, and priority for all ranking rows.
-	 * Use after bulk imports or when table/chart priority labels are out of sync.
+	 * Recalculate composite index, probability, and priority for existing ranking rows.
+	 * Uses the same path as save_ranking_data() (recalculateRecordMetrics per row).
+	 *
+	 * Optional POST/GET filters: member_state_id, period, prioritisation_category, region_id
 	 */
 	public function data_correction()
 	{
-		$updated = $this->composite_mdl->correct_composite_index(false);
+		$filters = [
+			'member_state_id' => $this->input->get_post('member_state_id'),
+			'period' => $this->input->get_post('period'),
+			'prioritisation_category' => $this->input->get_post('prioritisation_category'),
+			'region_id' => $this->input->get_post('region_id'),
+		];
+		$filters = array_filter($filters, function ($v) {
+			return $v !== null && $v !== '';
+		});
+
+		$result = $this->records_model->recalculate_all_ranking_metrics($filters);
+
 		echo json_encode([
 			'status' => 'success',
-			'message' => 'Composite index correction completed.',
-			'updated' => $updated
+			'message' => 'Ranking metrics recalculated for existing data.',
+			'total' => $result['total'],
+			'updated' => $result['updated'],
+			'failed' => $result['failed'],
 		]);
 	}
 	public function get_disease_chart_data()
