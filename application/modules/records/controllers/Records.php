@@ -63,6 +63,7 @@ class Records extends CI_Controller
 	try {
 		$member_state_id = $this->input->post('member_state_id');
 		$period = $this->input->post('period');
+		$region_id = $this->input->post('region_id');
 		$thematic_area_id = $this->input->post('thematic_area_id');
 		$prioritisation_category_id = $this->input->post('prioritisation_category_id');
 		
@@ -98,6 +99,9 @@ class Records extends CI_Controller
 		// Apply filters
 		if ($member_state_id) {
 			$this->db->where('ms.id', $member_state_id);
+		}
+		if ($region_id) {
+			$this->db->where('ms.region_id', $region_id);
 		}
 		if ($period) {
 			$this->db->where('msdd.period', $period);
@@ -290,8 +294,7 @@ class Records extends CI_Controller
 		10 => 'msd.mort',
 		11 => 'msd.composite_index',
 		12 => 'msd.probability',
-		13 => 'msd.priority_level',
-		14 => 'msd.draft_status'
+		13 => 'msd.priority_level'
 	);
 	
 	// Build the main query
@@ -314,10 +317,7 @@ class Records extends CI_Controller
 		msd.temp_priority_level,
 		msd.composite_index,
 		msd.probability,
-		msd.priority_level,
-		msd.draft_status,
-		msd.created_at,
-		msd.updated_at
+		msd.priority_level
 	');
 	$this->db->from('member_state_diseases_data msd');
 	$this->db->join('member_states ms', 'ms.id = msd.member_state_id', 'left');
@@ -405,10 +405,7 @@ class Records extends CI_Controller
 			safe_number_format($row['mort'], 2),
 			safe_number_format($row['composite_index'], 2),
 			safe_number_format($probability, 2),
-			$priority_level,
-			$row['draft_status'] == 1 ? '<span class="badge badge-warning">Draft</span>' : '<span class="badge badge-success">Final</span>',
-			$row['created_at'],
-			$row['updated_at']
+			$priority_level
 		);
 	}
 	
@@ -613,7 +610,20 @@ class Records extends CI_Controller
 }
 public function get_continental_disease_chart_data()
 {
-    $data = $this->records_model->get_priority_disease_counts_by_thematic_area_cont(null);
+    $filters = json_decode(file_get_contents('php://input'), true) ?: [];
+    $region_id = $filters['region_id'] ?? null;
+    $member_state_id = $filters['member_state_id'] ?? null;
+    $period = !empty($filters['period']) ? $filters['period'] : null;
+    $thematic_area_id = $filters['thematic_area_id'] ?? null;
+    $prioritisation_category_id = $filters['prioritisation_category_id'] ?? null;
+
+    $data = $this->records_model->get_priority_disease_counts_by_thematic_area(
+        $region_id,
+        $member_state_id,
+        $period,
+        $thematic_area_id,
+        $prioritisation_category_id
+    );
     echo json_encode($data);
 }
 

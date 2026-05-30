@@ -1,3 +1,47 @@
+<style>
+.ranking-dt-card .dataTables_wrapper .dataTables_length select,
+.ranking-dt-card .dataTables_wrapper .dataTables_filter input {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    padding: 0.35rem 0.65rem;
+}
+.ranking-dt-card .dataTables_wrapper .dataTables_filter input {
+    min-width: 220px;
+}
+.ranking-dt-card .dt-buttons .btn {
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+.ranking-dt-card table.dataTable thead th {
+    background: linear-gradient(180deg, #1e3a5f 0%, #152238 100%);
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.ranking-dt-card table.dataTable tbody td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+.ranking-dt-card table.dataTable tbody tr:hover {
+    background-color: #f0f7ff !important;
+}
+.ranking-dt-card .dataTables_info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.ranking-dt-card .dataTables_paginate .paginate_button {
+    border-radius: 0.375rem !important;
+    margin: 0 2px;
+}
+.ranking-dt-card .dataTables_paginate .paginate_button.current {
+    background: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+}
+</style>
+
 <!-- Professional Dashboard Header -->
 <div class="dashboard-header">
     <div class="container-fluid">
@@ -41,8 +85,9 @@
                             <div class="col-lg-2 col-md-4 col-sm-6">
                                 <label class="form-label">Year</label>
                                 <select class="form-control form-control-sm" id="period">
+                                    <option value="" selected>All Years</option>
                                     <?php for ($year = date('Y'); $year >= date('Y') - 10; $year--): ?>
-                                        <option><?= $year ?></option>
+                                        <option value="<?= $year ?>"><?= $year ?></option>
                                     <?php endfor; ?>
                                 </select>
                             </div>
@@ -162,7 +207,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
-                <div class="card">
+                <div class="card ranking-dt-card shadow-sm">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-white">
                             <i class="fa fa-table me-2 text-white"></i> Disease Ranking Data
@@ -173,13 +218,13 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body m-2">
+                    <div class="card-body p-3">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover mb-0" id="ranking-datatable" style="width:100%">
-                                <thead class="table-default text-white" style="color: #fff !important;">
+                            <table class="table table-hover table-striped w-100 mb-0" id="ranking-datatable">
+                                <thead>
                                     <tr>
                                         <th class="text-center">Period</th>
-                                        <th class="text-center">Priority Level</th>
+                                        <th class="text-center">Prioritisation Category</th>
                                         <th class="text-center">Region</th>
                                         <th class="text-center">Country</th>
                                         <th class="text-center">Disease Name</th>
@@ -192,14 +237,11 @@
                                         <th class="text-center">Composite Index</th>
                                         <th class="text-center">Probability</th>
                                         <th class="text-center">Priority Level</th>
-                                        <th class="text-center">Status</th>
-                                        <th class="text-center">Created</th>
-                                        <th class="text-center">Updated</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="17" class="text-center py-4">
+                                        <td colspan="14" class="text-center py-4">
                                             <div class="spinner-border text-primary" role="status">
                                                 <span class="sr-only">Loading...</span>
                                             </div>
@@ -213,7 +255,7 @@
                     <div class="card-footer bg-light text-muted">
                         <small>
                             <i class="fa fa-info-circle me-1"></i>
-                            Click on column headers to sort. Use the search box to filter data. Export options available above the table.
+                            Use the year filter for a single year or <strong>All Years</strong> for charts, map, and table. Change rows per page above the table. Export includes all filtered rows.
                         </small>
                     </div>
                 </div>

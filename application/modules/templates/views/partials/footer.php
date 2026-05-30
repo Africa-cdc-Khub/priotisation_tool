@@ -241,16 +241,18 @@ function handleFilterChange() {
   loadRankingForm(filters);
   renderChartByThematicArea(filters);
   renderChartByProbability(filters);
+  renderContinentalChart();
 }
 
 function getFilters() {
+  const periodVal = $('#period').val();
   return {
-    region_id: $('#region').val(),
-    member_state_id: $('#member_state').val(),
-    period: $('#period').val(),
-    thematic_area_id: $('#thematic_area').val(),
-    prioritisation_category_id: $('#prioritisation_category').val(),
-    disease_id: $('#disease_selector').val()
+    region_id: $('#region').val() || '',
+    member_state_id: $('#member_state').val() || '',
+    period: (periodVal === null || periodVal === undefined) ? '' : periodVal,
+    thematic_area_id: $('#thematic_area').val() || '',
+    prioritisation_category_id: $('#prioritisation_category').val() || '',
+    disease_id: $('#disease_selector').val() || ''
   };
 }
 
@@ -367,7 +369,12 @@ function renderChartByProbability(filters) {
 
 
 function renderContinentalChart() {
-  fetch('<?= base_url('records/get_continental_disease_chart_data') ?>')
+  const filters = getFilters();
+  fetch('<?= base_url('records/get_continental_disease_chart_data') ?>', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(filters)
+  })
     .then(res => res.json())
     .then(data => {
       // Sort descending so highest values appear first (top of bar chart)

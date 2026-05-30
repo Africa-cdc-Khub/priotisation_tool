@@ -511,16 +511,24 @@ function handleFilterChange() {
   loadRankingForm(filters);
   renderChartByThematicArea(filters);
   renderChartByProbability(filters);
+  renderContinentalChart();
+  if (typeof loadMapData === 'function') {
+    loadMapData();
+  }
+  if (typeof refreshDataTable === 'function' && dataTable) {
+    refreshDataTable();
+  }
 }
 
 function getFilters() {
+  const periodVal = $('#period').val();
   return {
-    region_id: $('#region').val(),
-    member_state_id: $('#member_state').val(),
-    period: $('#period').val(),
-    thematic_area_id: $('#thematic_area').val(),
-    prioritisation_category_id: $('#prioritisation_category').val(),
-    disease_id: $('#disease_selector').val()
+    region_id: $('#region').val() || '',
+    member_state_id: $('#member_state').val() || '',
+    period: (periodVal === null || periodVal === undefined) ? '' : periodVal,
+    thematic_area_id: $('#thematic_area').val() || '',
+    prioritisation_category_id: $('#prioritisation_category').val() || '',
+    disease_id: $('#disease_selector').val() || ''
   };
 }
 
@@ -637,7 +645,12 @@ function renderChartByProbability(filters) {
 
 
 function renderContinentalChart() {
-  fetch('<?= base_url('records/get_continental_disease_chart_data') ?>')
+  const filters = getFilters();
+  fetch('<?= base_url('records/get_continental_disease_chart_data') ?>', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(filters)
+  })
     .then(res => res.json())
     .then(data => {
       // Sort descending so highest values appear first (top of bar chart)
@@ -1040,9 +1053,8 @@ $(document).ready(function() {
     
     $('#reset-filters').click(function() {
         $('#region, #member_state, #thematic_area, #prioritisation_category').val('');
-        $('#period').val('<?= date('Y') ?>');
-        loadMapData();
-        refreshDataTable();
+        $('#period').val('');
+        handleFilterChange();
     });
     
     // Initialize DataTable after a short delay to ensure DOM is ready
@@ -1219,12 +1231,7 @@ function createHighchartsMap() {
 function loadMapData() {
     console.log('Loading map data for Highcharts...');
     
-    const filters = {
-        member_state_id: $('#member_state').val(),
-        period: $('#period').val(),
-        thematic_area_id: $('#thematic_area').val(),
-        prioritisation_category_id: $('#prioritisation_category').val()
-    };
+    const filters = getFilters();
     
     console.log('Map data filters:', filters);
     
@@ -1561,15 +1568,9 @@ function initializeDataTable() {
         });
         
         // Export helpers: fetch ALL filtered data (all pages) then export
-        var RANKING_EXPORT_HEADERS = ['Period', 'Priority Level', 'Region', 'Country', 'Disease Name', 'Thematic Area', 'Prevention', 'Detection', 'Morbidity', 'Case Management', 'Mortality', 'Composite Index', 'Probability', 'Priority Level', 'Status', 'Created', 'Updated'];
-        function stripHtml(s) {
-            if (s == null || s === '') return '';
-            var d = document.createElement('div');
-            d.innerHTML = s;
-            return (d.textContent || d.innerText || '').trim();
-        }
+        var RANKING_EXPORT_HEADERS = ['Period', 'Prioritisation Category', 'Region', 'Country', 'Disease Name', 'Thematic Area', 'Prevention', 'Detection', 'Morbidity', 'Case Management', 'Mortality', 'Composite Index', 'Probability', 'Priority Level'];
         function rowForExport(row) {
-            return row.map(function(cell, i) { return i === 14 ? stripHtml(cell) : (cell != null ? String(cell) : ''); });
+            return row.map(function(cell) { return cell != null ? String(cell) : ''; });
         }
         function fetchAllRankingData(dt, callback) {
             var info = dt.page.info();
@@ -1724,7 +1725,7 @@ function initializeDataTable() {
             },
             columns: [
                 { data: 0, title: 'Period' },
-                { data: 1, title: 'Priority Level' },
+                { data: 1, title: 'Prioritisation Category' },
                 { data: 2, title: 'Region' },
                 { data: 3, title: 'Country' },
                 { data: 4, title: 'Disease Name' },
@@ -1736,28 +1737,33 @@ function initializeDataTable() {
                 { data: 10, title: 'Mortality' },
                 { data: 11, title: 'Composite Index' },
                 { data: 12, title: 'Probability' },
-                { data: 13, title: 'Priority Level' },
-                { data: 14, title: 'Status' },
-                { data: 15, title: 'Created' },
-                { data: 16, title: 'Updated' }
+                { data: 13, title: 'Priority Level' }
             ],
-            order: [[13, 'desc']],
+            order: [[12, 'desc']],
             pageLength: 25,
-            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            lengthMenu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, 'All']],
             responsive: true,
             scrollX: true,
+            autoWidth: false,
+            stateSave: false,
+            columnDefs: [
+                { className: 'text-center', targets: '_all' }
+            ],
             language: {
-                processing: "Loading data...",
-                search: "Search:",
-                lengthMenu: "Show _MENU_ entries",
-                info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                infoEmpty: "No entries found",
-                infoFiltered: "(filtered from _MAX_ total entries)",
+                processing: '<i class="fa fa-spinner fa-spin me-2"></i> Loading data...',
+                search: 'Search records:',
+                searchPlaceholder: 'Type to filter...',
+                lengthMenu: 'Rows per page: _MENU_',
+                info: 'Showing _START_ to _END_ of _TOTAL_ records',
+                infoEmpty: 'No records found',
+                infoFiltered: '(filtered from _MAX_ total)',
+                zeroRecords: 'No matching records found',
+                emptyTable: 'No ranking data available for the selected filters',
                 paginate: {
-                    first: "First",
-                    last: "Last",
-                    next: "Next",
-                    previous: "Previous"
+                    first: 'First',
+                    last: 'Last',
+                    next: 'Next',
+                    previous: 'Previous'
                 }
             },
             initComplete: function() {
@@ -1767,7 +1773,7 @@ function initializeDataTable() {
         
         // Add buttons and DOM configuration if buttons are available
         if (availableButtons.length > 0) {
-            dataTableConfig.dom = 'Bfrtip';
+            dataTableConfig.dom = '<"ranking-dt-top row g-2 align-items-center mb-3"<"col-sm-12 col-md-6"B><"col-sm-6 col-md-3"l><"col-sm-6 col-md-3"f>>rt<"ranking-dt-bottom row g-2 align-items-center mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>';
             dataTableConfig.buttons = availableButtons;
             dataTableConfig.language.buttons = {
                 excel: "Export to Excel",
@@ -1776,7 +1782,7 @@ function initializeDataTable() {
                 print: "Print"
             };
         } else {
-            dataTableConfig.dom = 'frtip';
+            dataTableConfig.dom = '<"ranking-dt-top row g-2 align-items-center mb-3"<"col-sm-6 col-md-4"l><"col-sm-6 col-md-8"f>>rt<"ranking-dt-bottom row g-2 align-items-center mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>';
             console.warn('No export buttons available, using basic configuration');
         }
         
@@ -1803,7 +1809,7 @@ function initializeDataTable() {
         // Fallback: Show a simple message
         $('#ranking-datatable tbody').html(`
             <tr>
-                <td colspan="17" class="text-center text-danger">
+                <td colspan="14" class="text-center text-danger">
                     <i class="fa fa-exclamation-triangle"></i>
                     Error loading data. Please refresh the page.
                 </td>

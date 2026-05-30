@@ -220,7 +220,11 @@ class Records_model extends CI_Model
 	}
 	public function get_disease_probabilities($region_id,$member_state_id, $period, $thematic_area_id, $prioritisation_category_id)
 {
-    $this->db->select('d.name as disease_name, msd.probability');
+    if (empty($period)) {
+        $this->db->select('d.name as disease_name, MAX(msd.probability) as probability');
+    } else {
+        $this->db->select('d.name as disease_name, msd.probability');
+    }
     $this->db->from('member_state_diseases_data msd');
     $this->db->join('diseases_and_conditions d', 'd.id = msd.disease_id');
     
@@ -243,9 +247,13 @@ class Records_model extends CI_Model
         $this->db->where('d.thematic_area_id', $thematic_area_id);
     }
 
-    $this->db->where('msd.draft_status', 0); // Only finalized data
+    $this->db->where('msd.draft_status', 0);
 
-    $this->db->order_by('msd.probability', 'DESC');
+    if (empty($period)) {
+        $this->db->group_by('d.id, d.name');
+    }
+
+    $this->db->order_by('probability', 'DESC');
 
     return $this->db->get()->result_array();
 }
@@ -269,7 +277,7 @@ public function get_priority_disease_counts_by_thematic_area_cont($member_state_
 
 public function get_disease_probability_value($region_id,$member_state_id, $period, $thematic_area_id, $prioritisation_category_id, $disease_id)
 {
-    $this->db->select('probability');
+    $this->db->select_max('member_state_diseases_data.probability', 'probability');
     $this->db->from('member_state_diseases_data');
     $this->db->join('diseases_and_conditions d', 'd.id = member_state_diseases_data.disease_id');
 
@@ -298,7 +306,6 @@ public function get_disease_probability_value($region_id,$member_state_id, $peri
     }
 
     $this->db->where('draft_status', 0);
-    $this->db->limit(1);
     $query = $this->db->get();
 
     $row = $query->row();

@@ -22,7 +22,7 @@ Contact your administrator if you cannot see the expected country or data.
 
 | Filter | Effect |
 |--------|--------|
-| Year | Reporting period |
+| Year | Reporting period — choose **All Years** to include every period in charts, map, and table |
 | Region | Limits countries in the country list |
 | Country | Focuses charts, map, and table on one member state (or all) |
 | Thematic area | Filters by disease grouping |
