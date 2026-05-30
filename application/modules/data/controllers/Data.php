@@ -14,7 +14,8 @@ class Data extends MX_Controller
 		$this->load->model("data_mdl", 'datamdl');
 	}
     public function correct_composite_index(){
-		$this->composite_mdl->correct_composite_index();
+		$updated = $this->composite_mdl->correct_composite_index(false);
+		echo "Composite index correction and update done successfully. Rows updated: " . $updated;
 	}
 	public function form($table,$cols)
 	

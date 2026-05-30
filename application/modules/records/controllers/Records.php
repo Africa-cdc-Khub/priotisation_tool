@@ -8,6 +8,7 @@ class Records extends CI_Controller
 		parent::__construct();
 		$this->load->model('records_model');
 		$this->load->model('assignments_mdl');
+		$this->load->model('data/composite_mdl', 'composite_mdl');
 		$this->load->library('pagination');
 	}
 
@@ -387,6 +388,9 @@ class Records extends CI_Controller
 	// Format data for DataTables
 	$formatted_data = array();
 	foreach ($data as $row) {
+		$probability = (float) $row['probability'];
+		$priority_level = $this->composite_mdl->priorityFromProbability($probability);
+
 		$formatted_data[] = array(
 			$row['period'],
 			$row['prioritization_level'],
@@ -400,8 +404,8 @@ class Records extends CI_Controller
 			safe_number_format($row['case'], 2),
 			safe_number_format($row['mort'], 2),
 			safe_number_format($row['composite_index'], 2),
-			safe_number_format($row['probability'], 2),
-			$row['priority_level'], // Text field (High, Medium, Low)
+			safe_number_format($probability, 2),
+			$priority_level,
 			$row['draft_status'] == 1 ? '<span class="badge badge-warning">Draft</span>' : '<span class="badge badge-success">Final</span>',
 			$row['created_at'],
 			$row['updated_at']
@@ -542,8 +546,19 @@ class Records extends CI_Controller
 			echo json_encode(['status' => 'error', 'message' => 'Error saving data.']);
 		}
 	}
-    public function data_correction(){
-		$this->composite_mdl->correct_composite_index();
+
+	/**
+	 * Recalculate composite index, probability, and priority for all ranking rows.
+	 * Use after bulk imports or when table/chart priority labels are out of sync.
+	 */
+	public function data_correction()
+	{
+		$updated = $this->composite_mdl->correct_composite_index(false);
+		echo json_encode([
+			'status' => 'success',
+			'message' => 'Composite index correction completed.',
+			'updated' => $updated
+		]);
 	}
 	public function get_disease_chart_data()
 	{

@@ -8,6 +8,7 @@ class Records_model extends CI_Model
 	{
 		parent::__construct();
 		$this->load->database();
+		$this->load->model('data/composite_mdl', 'composite_mdl');
 	}
 
 	public function get_all_parameters()
@@ -80,10 +81,16 @@ class Records_model extends CI_Model
 
     if ($existing) {
         $this->db->update('member_state_diseases_data', $data, ['id' => $existing['id']]);
+        $recordId = $existing['id'];
     } else {
         $this->db->insert('member_state_diseases_data', $data);
+        $recordId = $this->db->insert_id();
     }
-    correct_composite_index_async();
+
+    if (!empty($recordId)) {
+        $this->composite_mdl->updateRecordById($recordId);
+    }
+
     return true;
 }
 

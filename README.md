@@ -1,4 +1,21 @@
 
+# Africa CDC Disease Prioritisation Tool
+
+Web application for country-level disease prioritisation (CodeIgniter 3, HMVC).  
+Local example: `http://localhost/priotisation_tool/dashboard/home`
+
+## Documentation
+
+| Guide | Location |
+|-------|----------|
+| User guide | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) |
+| Developer guide | [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) |
+| Composite index & priority | [docs/COMPOSITE_INDEX_AND_PRIORITY.md](docs/COMPOSITE_INDEX_AND_PRIORITY.md) |
+
+**Priority vs probability:** Table and charts use probability ≥ **0.80** = High, **0.65–0.79** = Medium, &lt; **0.65** = Low. After saving criteria, derived fields are recalculated automatically. Run `records/data_correction` to refresh all historical rows.
+
+---
+
 # Installation Guide for Africa CDC Knowledge Hub
 
 This guide covers the setup process for the Africa CDC Knowledge Hub on both Windows and Linux environments.
